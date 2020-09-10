@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="sale_discount_form_pac" model="ir.ui.view">
+            <field name="name">sale.discount.form.pac</field>
+            <field name="model">discount.sale</field>
+            <field name="mode">primary</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <h1>Sale Discount</h1>       
+                    </header>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name='name' string="Discount Name"/>
+                                <field name='company_id' string="Company"/>
+                            </group>
+                            <group>
+                                <field name='discount' string="Discount %"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="sale_discount_tree_pac" model="ir.ui.view">
+            <field name="name">sale.discount.tree.pac</field>
+            <field name="model">discount.sale</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="discount"/>
+                    <field name="company_id"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_sale_discount_pac" model="ir.actions.act_window">
+            <field name="name">Sale Discount</field>
+            <field name="res_model">discount.sale</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem name="Sale Discount" id="menu_salediscount_pac" parent="sale.product_menu_catalog"
+                        action="action_sale_discount_pac"/>
+
+    </data>
+</odoo>

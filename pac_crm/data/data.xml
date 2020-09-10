@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="True">
+        <record id="rental_order_sequence" model="ir.sequence">
+            <field name="implementation">standard</field>
+            <field name="name">Rental Order Sequence</field>
+            <field name="code">Rental</field>
+            <field name="number_increment">1</field>
+            <field name="number_next">1</field>
+            <field name="padding">5</field>
+            <field name="prefix">R</field>
+            <field name="active">True</field>
+        </record>
+
+        <record id="sale_discount_rule_portal" model="ir.rule">
+            <field name="model_id" ref="model_discount_sale"/>
+            <field name="domain_force">
+                ['|', ('company_id','in', company_ids),('company_id','=',False)]
+            </field>
+            <field name="active">True</field>
+            <field name="perm_create">True</field>
+            <field name="perm_write">True</field>
+            <field name="perm_unlink">True</field>
+            <field name="perm_read">True</field>
+
+        </record>
+    </data>
+</odoo>

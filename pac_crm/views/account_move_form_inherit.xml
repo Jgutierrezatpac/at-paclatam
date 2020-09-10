@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="account_move_form_inherit_pac" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.pac</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="discount_ids" widget="many2many_tags"/>
+            </field>
+
+            <field name="amount_untaxed" position="after">
+                <field name="amount_discount"/>
+            </field> 
+        </field>
+    </record>
+</odoo>
