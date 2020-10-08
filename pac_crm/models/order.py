@@ -5,6 +5,8 @@ from odoo import api, fields, models, _, SUPERUSER_ID
 import base64
 import xlrd
 from odoo.exceptions import UserError
+from odoo.tools import float_round
+import math
 
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
@@ -15,9 +17,27 @@ class SaleOrder(models.Model):
     amount_discount = fields.Monetary(string='Discount Total', store=True, compute='_amount_all')
 
     is_select = fields.Boolean(string="Crm Calculate Selection")
+    is_used = fields.Boolean(string="Used products")
 
     file_name = fields.Char(string='File Name')
     file_data = fields.Binary('import file', )
+
+    total_weight = fields.Float(string="Total Weight", compute="_compute_total_weight_parts")
+    total_part = fields.Float(string="Total Parts", compute="_compute_total_weight_parts")
+
+    replacement_price = fields.Monetary(string='Replacement', store=True, compute='_compute_total_weight_parts') 
+
+    @api.depends('order_line')
+    def _compute_total_weight_parts(self):
+        for order in self:
+            weight = parts = replacement = 0
+            for line in order.order_line:
+                weight += line.total_weight 
+                parts += line.product_uom_qty
+                replacement += (line.product_uom_qty * line.product_id.lst_price)
+            order.total_weight = weight 
+            order.total_part = parts
+            order.replacement_price = replacement
 
     @api.depends('discount_ids')
     def _compute_authorization(self):
@@ -64,6 +84,8 @@ class SaleOrder(models.Model):
                     'price_unit': product_id.list_price,
                     'product_uom': product_id.product_tmpl_id.uom_po_id.id,
                     'name': product_id.name,
+                    'weight': product_id.weight,
+                    'total_weight': product_id.weight * float(quantity)
                 }
                 self.env['sale.order.line'].create(vals)
  
@@ -135,8 +157,9 @@ class SaleOrder(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    weight = fields.Float(string='Weight KG', default=0)
-    total_weight = fields.Float(string="Total Weight KG", readonly=True, default=0)
+    weight = fields.Float(string='Weight KG', store=True)
+    total_weight = fields.Float(string="Total Weight KG", readonly=True, compute="_compute_total_weight")
+    rack_qty = fields.Integer(string="Rack Qty", default=0, readonly=True, compute="_compute_total_weight")
 
     @api.onchange('product_id')
     def onchange_weight(self):
@@ -144,8 +167,11 @@ class SaleOrderLine(models.Model):
             if not line.product_id == False and not line.product_id.weight == False:
                 line.weight = line.product_id.weight
     
-    @api.onchange('product_id','product_uom_qty', 'weight')
+    @api.depends('product_uom_qty', 'weight')
     def _compute_total_weight(self):
         for line in self:
-            if line.product_id and line.product_id.weight:
-                line.total_weight = line.weight * line.product_uom_qty
+            line.total_weight = line.weight * line.product_uom_qty
+            rack = 1
+            if line.product_id and line.product_id.rack_qty > 0:
+                rack = line.product_id.rack_qty
+            line.rack_qty = math.ceil(line.product_uom_qty / rack)

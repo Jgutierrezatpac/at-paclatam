@@ -28,6 +28,8 @@
         'views/account_move_form_inherit.xml',
         'views/users_form_inherit.xml',
         'views/second_team_views.xml',
+        'views/product_inherit_form.xml',
+        'views/partner_inherit_form.xml',
     ],
     # only loaded in demonstration mode
     'demo': [],

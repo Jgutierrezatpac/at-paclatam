@@ -8,28 +8,45 @@ class CrmLead(models.Model):
     num_months = fields.Integer(string='Number of Months', default=0)
     second_team_id = fields.Many2one('second.sales.team', string="Second Sales Team")
     rental_probability = fields.Float(string='Rental Probability')
-    sale_value = fields.Float(string="Sale Deal Value", compute="_compute_value")
-    rental_value = fields.Float(string="Rental Deal Value",compute="_compute_value")
-    lead_sale_value = fields.Float(string="Sale Deal Value")
-    lead_rental_value = fields.Float(string="Rental Deal Value")
+    used_sale_value = fields.Float(string="Used Sale Deal Value", store=True, compute="_compute_value")
+    sale_value = fields.Float(string="Sale Deal Value", store=True, compute="_compute_value")
+    rental_value = fields.Float(string="Rental Deal Value", store=True,compute="_compute_value")
+    rental_weight = fields.Float(string="Rental weight", store=True, compute="_compute_selected_quotation")
+    sales_weight = fields.Float(string="Sales weight", store=True, compute="_compute_selected_quotation")
+
+    lead_weight = fields.Float(string="Weight (Appr.)")
+    lead_sale_value = fields.Float(string="Sale Deal Value (Appr.)")
+    lead_usedsale_value = fields.Float(string="Used Sale Deal Value (Appr.)")
+    lead_rental_value = fields.Float(string="Rental Deal Value (Appr.")
+
 
     rental_order_count = fields.Integer(string="Rental order count", compute="_compute_rental_total",default=0)
     rental_amount_total = fields.Monetary(compute='_compute_rental_total', string="Sum of Rentals", default=0.0, currency_field='company_currency')
     rent_quotation_count = fields.Integer(compute='_compute_rental_total', string="Number of Rentals", default=0)
 
     total_selected_sales = fields.Monetary(string="Total selected Sales", currency_field='company_currency', compute="_compute_selected_quotation")
-    total_selected_rental = fields.Monetary(string="Total selected Sales", currency_field='company_currency', compute="_compute_selected_quotation")
+    total_selected_rental = fields.Monetary(string="Total selected Rental", currency_field='company_currency', compute="_compute_selected_quotation")
+    total_selected_used = fields.Monetary(string="Total selected Used Sales", currency_field='company_currency', compute="_compute_selected_quotation")
 
     def _compute_selected_quotation(self):
         for lead in self:
-            rental = sales = 0.0
+            rental = sales = used = 0.0
+            rental_weight = sales_weight = 0
             for order in lead.order_ids:
                 if order.state in ('draft', 'sent') and order.is_rental_order == True and order.is_select == True:
                     rental += order.amount_untaxed
+                    rental_weight += order.total_weight
                 elif order.state in ('draft', 'sent') and order.is_select == True:
-                    sales += order.amount_untaxed
+                    if order.is_used:
+                        used += order.amount_untaxed
+                    else: 
+                        sales += order.amount_untaxed
+                    sales_weight += order.total_weight
             lead.total_selected_sales = sales 
             lead.total_selected_rental = rental
+            lead.total_selected_used = used
+            lead.rental_weight = rental_weight
+            lead.sales_weight = sales_weight
 
     @api.depends('order_ids.state', 'order_ids.currency_id', 'order_ids.amount_untaxed', 'order_ids.date_order', 'order_ids.company_id')
     def _compute_rental_total(self):
@@ -60,6 +77,7 @@ class CrmLead(models.Model):
     @api.depends('num_months','rental_probability', 'probability','total_selected_sales','total_selected_rental')
     def _compute_value(self):
         for lead in self:
+            lead.used_sale_value = lead.total_selected_used * (lead.probability / 100.00)
             lead.sale_value = lead.total_selected_sales * (lead.probability / 100.00)
             lead.rental_value = lead.total_selected_rental * lead.num_months * (lead.rental_probability / 100.00)
 
