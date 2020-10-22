@@ -40,7 +40,7 @@
             </field>
 
             <field name="planned_revenue" position="replace">
-                <span class="oe_grey p-2"> Sales </span>
+                <span class="oe_grey p-2"> Sales(New) </span>
                 <field name="total_selected_sales"/>
             </field>
 
@@ -55,7 +55,7 @@
                     </div>
                     <div id="probability" class="o_row d-flex">
                         <span class="oe_grey p-2" attrs="{'invisible': [('type', '!=', 'lead')]}"> Sales(Used) </span>
-                        <field name="probability" widget="float" class="oe_inline"/>
+                        <field name="used_probability" widget="float" class="oe_inline"/>
                         <span class="oe_grey"> %</span>
                     </div>
                 </h2>
@@ -79,6 +79,9 @@
 
             <field name="mobile" position="after">
                 <field name="lead_weight"/>
+                <field name="sales_new_rate"/>
+                <field name="sales_old_rate"/>
+                <field name="rental_rate"/>
                 <field name="num_months"/>
                 <field name="lead_sale_value"/>
                 <field name="lead_usedsale_value"/>

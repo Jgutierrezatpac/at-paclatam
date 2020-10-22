@@ -25,6 +25,7 @@
 
             <field name="partner_id" position="after">
                 <field name="discount_ids" widget="many2many_tags"/>
+                <field name="replace_discount_ids" widget="many2many_tags" attrs="{'invisible': [('is_rental_order','=', False)]}"/>
                 <field name="need_authorize"/>
             </field>
 
@@ -40,6 +41,13 @@
                 <field name="weight"/>
                 <field name="total_weight"/>
                 <field name="rack_qty"/>
+                <field name="replacement" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
+                <field name="discount_replace" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
+                <field name="unit_price_discount"/>
+            </xpath>
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_subtotal']" position="after">
+                <field name="replacement_total" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
+              
             </xpath>
 
             <xpath expr="//notebook" position="inside">
