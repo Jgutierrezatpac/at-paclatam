@@ -11,13 +11,15 @@ import math
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    discount_ids = fields.Many2many("discount.sale", string="Discounts", store=True)
+    discount_ids = fields.Many2many("discount.sale",'order_discount', string="Discounts", store=True)
+    replace_discount_ids = fields.Many2many("discount.sale","replacement_discount", string="Replacement Discounts", store=True)
+
     need_authorize = fields.Boolean(string="Discount superior authorization",store=True,compute="_compute_authorization")
     is_authorize = fields.Boolean(string="Authorization",store=True, )
     amount_discount = fields.Monetary(string='Discount Total', store=True, compute='_amount_all')
 
-    is_select = fields.Boolean(string="Crm Calculate Selection")
-    is_used = fields.Boolean(string="Used products")
+    is_select = fields.Boolean(string="CRM Calculate Selection")
+    is_used = fields.Boolean(string="Sales(Used) Quotation")
 
     file_name = fields.Char(string='File Name')
     file_data = fields.Binary('import file', )
@@ -34,7 +36,7 @@ class SaleOrder(models.Model):
             for line in order.order_line:
                 weight += line.total_weight 
                 parts += line.product_uom_qty
-                replacement += (line.product_uom_qty * line.product_id.lst_price)
+                replacement += line.replacement_total
             order.total_weight = weight 
             order.total_part = parts
             order.replacement_price = replacement
@@ -72,22 +74,73 @@ class SaleOrder(models.Model):
         # create the method
         self.valid_product_code(archive_lines)
 
+        racks = {}
+
         for line in archive_lines:
             code = str(line.get('codigo_producto',"")).strip()
             product_id = self.env['product.product'].search([('default_code','=',code)])
             quantity = line.get(u'cantidad',0)
-            if self and product_id:
-                vals = {
-                    'order_id': self.id,
-                    'product_id': product_id.id,
-                    'product_uom_qty': float(quantity),
-                    'price_unit': product_id.list_price,
-                    'product_uom': product_id.product_tmpl_id.uom_po_id.id,
-                    'name': product_id.name,
-                    'weight': product_id.weight,
-                    'total_weight': product_id.weight * float(quantity)
-                }
+
+            racks_qty = 1
+            if product_id.rack_qty > 0:
+                racks_qty = quantity / product_id.rack_qty
+            if product_id.rack_name and racks.get(product_id.rack_name):
+                racks[product_id.rack_name] += racks_qty 
+            elif product_id.rack_name:
+                racks[product_id.rack_name] = racks_qty
+
+            if not self.is_rental_order:
+                if self and product_id:
+                    vals = {
+                        'order_id': self.id,
+                        'product_id': product_id.id,
+                        'product_uom_qty': float(quantity),
+                        'product_uom': product_id.product_tmpl_id.uom_po_id.id,
+                        'name': product_id.name,
+                        'weight': product_id.weight,
+                        'rack_qty': racks_qty,
+                        'total_weight': product_id.weight * float(quantity)
+                    }
+
+            else:  
+                if self and product_id:
+                    price = 0
+                    if product_id.rental_pricing_ids:
+                        for pricing in product_id.rental_pricing_ids:
+                            if pricing.unit == 'month':
+                                price = pricing.price
+                                break
+                    vals = {
+                        'order_id': self.id,
+                        'product_id': product_id.id,
+                        'product_uom_qty': float(quantity),
+                        'price_unit' : price,
+                        'replacement': product_id.lst_price,
+                        'product_uom': product_id.product_tmpl_id.uom_po_id.id,
+                        'name': product_id.name,
+                        'weight': product_id.weight,
+                        'rack_qty': racks_qty,
+                        'total_weight': product_id.weight * float(quantity)
+                    }
+            self.env['sale.order.line'].create(vals)
+        if not self.is_rental_order:
+            for key in racks.keys():
+                product_id = self.env['product.product'].search([('default_code','=',key)])
+                if self and product_id:
+                    vals = {
+                        'order_id': self.id,
+                        'product_id': product_id.id,
+                        'product_uom_qty': math.ceil(racks[key]),
+                        'price_unit': product_id.lst_price,
+                        'product_uom': product_id.product_tmpl_id.uom_po_id.id,
+                        'name': product_id.name,
+                        'weight': product_id.weight,
+                        'rack_qty' : 0,
+                        'total_weight': product_id.weight * math.ceil(racks[key])
+                    }
                 self.env['sale.order.line'].create(vals)
+
+        # use "racks" to create sale order.line for it
  
     def valid_product_code(self, archive_lines):
         products = self.env['product.product']
@@ -157,21 +210,56 @@ class SaleOrder(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    weight = fields.Float(string='Weight KG', store=True)
+    weight = fields.Float(string='Weight KG', store=True, compute="_compute_weight")
     total_weight = fields.Float(string="Total Weight KG", readonly=True, compute="_compute_total_weight")
-    rack_qty = fields.Integer(string="Rack Qty", default=0, readonly=True, compute="_compute_total_weight")
-
-    @api.onchange('product_id')
-    def onchange_weight(self):
-        for line in self:
-            if not line.product_id == False and not line.product_id.weight == False:
-                line.weight = line.product_id.weight
+    rack_qty = fields.Float(string="Rack Qty", default=0, readonly=True, compute="_compute_total_weight")
     
+    replacement = fields.Float(string="Replacement Cost", )
+    discount_replace = fields.Float(string="Replacement Discount Cost", compute="_compute_prices")
+    replacement_total = fields.Float(string="Replacement Subtotal", compute="_compute_replacement_total")
+    unit_price_discount = fields.Float(string="Unit Price Discount", compute="_compute_prices")
+
+    @api.depends('product_id', 'product_id.weight')
+    def _compute_weight(self):
+        for line in self:
+            if line.product_id and line.product_id.weight:
+                line.weight = line.product_id.weight
+            else:
+                line.weight = 0
+            
+    @api.depends('product_id','replacement','price_unit', 'order_id.discount_ids', 'order_id.replace_discount_ids')
+    def _compute_prices(self):
+        for line in self:
+            sum_discounts = 0.0
+            sum_replace = 0.0
+            for dc in line.order_id.discount_ids:
+                sum_discounts += dc.discount
+            for dc in line.order_id.replace_discount_ids:
+                sum_replace += dc.discount
+
+            if line.product_id:
+                line.discount_replace = (line.replacement * ((100 - sum_replace) / 100))
+                line.unit_price_discount = (line.price_unit * ((100 - sum_discounts) / 100))
+                line.replacement = line.product_id.lst_price
+            else:
+                line.discount_replace = 0
+                line.unit_price_discount = 0
+                line.replacement = 0
+
+    @api.depends('product_id', 'discount_replace', 'product_uom_qty')
+    def _compute_replacement_total(self):
+        for line in self:
+            if line.product_id:
+                line.replacement_total = line.discount_replace * line.product_uom_qty
+            else:
+                line.replacement_total = 0
+
     @api.depends('product_uom_qty', 'weight')
     def _compute_total_weight(self):
         for line in self:
             line.total_weight = line.weight * line.product_uom_qty
             rack = 1
-            if line.product_id and line.product_id.rack_qty > 0:
-                rack = line.product_id.rack_qty
-            line.rack_qty = math.ceil(line.product_uom_qty / rack)
+            if line.product_id:
+                if line.product_id.rack_qty > 0:
+                    rack = line.product_id.rack_qty  
+            line.rack_qty = line.product_uom_qty / rack

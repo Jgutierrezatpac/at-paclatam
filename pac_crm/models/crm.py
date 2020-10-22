@@ -8,17 +8,23 @@ class CrmLead(models.Model):
     num_months = fields.Integer(string='Number of Months', default=0)
     second_team_id = fields.Many2one('second.sales.team', string="Second Sales Team")
     rental_probability = fields.Float(string='Rental Probability')
+    used_probability = fields.Float(string='Used Probability')
     used_sale_value = fields.Float(string="Used Sale Deal Value", store=True, compute="_compute_value")
     sale_value = fields.Float(string="Sale Deal Value", store=True, compute="_compute_value")
     rental_value = fields.Float(string="Rental Deal Value", store=True,compute="_compute_value")
     rental_weight = fields.Float(string="Rental weight", store=True, compute="_compute_selected_quotation")
     sales_weight = fields.Float(string="Sales weight", store=True, compute="_compute_selected_quotation")
 
+    # For Leads only start
     lead_weight = fields.Float(string="Weight (Appr.)")
-    lead_sale_value = fields.Float(string="Sale Deal Value (Appr.)")
-    lead_usedsale_value = fields.Float(string="Used Sale Deal Value (Appr.)")
-    lead_rental_value = fields.Float(string="Rental Deal Value (Appr.")
+    lead_sale_value = fields.Float(string="Sale Deal Value (Appr.)", compute="_compute_leads_value")
+    lead_usedsale_value = fields.Float(string="Used Sale Deal Value (Appr.)", compute="_compute_leads_value")
+    lead_rental_value = fields.Float(string="Rental Deal Value (Appr.)", compute="_compute_leads_value")
 
+    sales_new_rate = fields.Float(string="Sales New Rate")
+    sales_old_rate = fields.Float(string="Sales Old Rate")
+    rental_rate = fields.Float(string="Rental Rate")
+    # end
 
     rental_order_count = fields.Integer(string="Rental order count", compute="_compute_rental_total",default=0)
     rental_amount_total = fields.Monetary(compute='_compute_rental_total', string="Sum of Rentals", default=0.0, currency_field='company_currency')
@@ -27,6 +33,13 @@ class CrmLead(models.Model):
     total_selected_sales = fields.Monetary(string="Total selected Sales", currency_field='company_currency', compute="_compute_selected_quotation")
     total_selected_rental = fields.Monetary(string="Total selected Rental", currency_field='company_currency', compute="_compute_selected_quotation")
     total_selected_used = fields.Monetary(string="Total selected Used Sales", currency_field='company_currency', compute="_compute_selected_quotation")
+
+    @api.depends('num_months','lead_weight','sales_new_rate', 'sales_old_rate', 'rental_rate', 'probability', 'rental_probability', 'used_probability')
+    def _compute_leads_value(self):
+        for lead in self:
+            lead.lead_sale_value = lead.lead_weight * lead.sales_new_rate * (lead.probability / 100.0)
+            lead.lead_usedsale_value = lead.lead_weight * lead.sales_old_rate * (lead.used_probability / 100.0)
+            lead.lead_rental_value = lead.lead_weight * lead.rental_rate * (lead.rental_probability / 100.0)* lead.num_months
 
     def _compute_selected_quotation(self):
         for lead in self:
@@ -65,6 +78,7 @@ class CrmLead(models.Model):
             lead.rental_amount_total = total
             lead.rent_quotation_count = quotation_cnt
             lead.rental_order_count = rental_order_cnt
+            lead._compute_value()
     
     @api.depends('order_ids.state', 'order_ids.currency_id', 'order_ids.amount_untaxed', 'order_ids.date_order', 'order_ids.company_id')
     def _compute_sale_data(self):
@@ -77,7 +91,7 @@ class CrmLead(models.Model):
     @api.depends('num_months','rental_probability', 'probability','total_selected_sales','total_selected_rental')
     def _compute_value(self):
         for lead in self:
-            lead.used_sale_value = lead.total_selected_used * (lead.probability / 100.00)
+            lead.used_sale_value = lead.total_selected_used * (lead.used_probability / 100.00)
             lead.sale_value = lead.total_selected_sales * (lead.probability / 100.00)
             lead.rental_value = lead.total_selected_rental * lead.num_months * (lead.rental_probability / 100.00)
 
