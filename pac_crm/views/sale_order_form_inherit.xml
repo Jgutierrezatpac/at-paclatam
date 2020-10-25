@@ -5,6 +5,7 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+        <field name="sequence">24</field>
             <xpath expr="//group[@name='note_group']/group[1]" position="before">
                 <group class="col-sm-2">
                     <field name="total_weight"/>
@@ -20,7 +21,7 @@
 
             <field name="payment_term_id" position="after">
                 <field name="is_select" attrs="{'invisible': ['|',('opportunity_id','=',False),('state','not in', ['sent','draft'])]}"/>
-                <field name="is_used" attrs="{'invisible': ['|',('opportunity_id','=',False),('state','not in', ['sent','draft'])]}"/>
+                <field name="is_used" attrs="{'invisible': ['|','|',('opportunity_id','=',False),('state','not in', ['sent','draft']),('is_rental_order','=',True)]}"/>
             </field>
 
             <field name="partner_id" position="after">
@@ -47,7 +48,13 @@
             </xpath>
             <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_subtotal']" position="after">
                 <field name="replacement_total" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
-              
+            </xpath>
+
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='tax_id'][1]" position="replace">
+                <field name="tax_id" attrs="{'column_invisible': True}"/>
+            </xpath>
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='name']" position="replace">
+                <field name="name" attrs="{'column_invisible': True}"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">

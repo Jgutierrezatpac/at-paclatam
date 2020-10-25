@@ -43,6 +43,9 @@
                 <span class="oe_grey p-2"> Sales(New) </span>
                 <field name="total_selected_sales"/>
             </field>
+            <field name="is_automated_probability" position="after">
+                <span class="oe_grey p-2" attrs="{'invisible': [('type', '!=', 'lead')]}"> Sales(New)</span>
+            </field>
 
             <xpath expr="//div[@class='oe_title']" position="inside">
                 <h2 class="o_row row no-gutters d-flex">

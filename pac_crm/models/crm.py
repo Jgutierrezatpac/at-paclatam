@@ -17,12 +17,12 @@ class CrmLead(models.Model):
 
     # For Leads only start
     lead_weight = fields.Float(string="Weight (Appr.)")
-    lead_sale_value = fields.Float(string="Sale Deal Value (Appr.)", compute="_compute_leads_value")
+    lead_sale_value = fields.Float(string="New Sale Deal Value (Appr.)", compute="_compute_leads_value")
     lead_usedsale_value = fields.Float(string="Used Sale Deal Value (Appr.)", compute="_compute_leads_value")
     lead_rental_value = fields.Float(string="Rental Deal Value (Appr.)", compute="_compute_leads_value")
 
     sales_new_rate = fields.Float(string="Sales New Rate")
-    sales_old_rate = fields.Float(string="Sales Old Rate")
+    sales_old_rate = fields.Float(string="Sales Used Rate")
     rental_rate = fields.Float(string="Rental Rate")
     # end
 
@@ -114,14 +114,43 @@ class CrmLead(models.Model):
         return action
 
     def action_view_rental_quotation(self):
-        action = self.action_view_sale_quotation()
+        action = self.env.ref('sale_renting.rental_order_action').read()[0]
+        action['context'] = {
+            'search_default_draft': 1,
+            'search_default_partner_id': self.partner_id.id,
+            'default_partner_id': self.partner_id.id,
+            'default_opportunity_id': self.id,
+            'default_is_rental_order': True,
+            'default_rent_ok': 1,
+            'rental_products': True,
+        }
         action['domain'] = [('opportunity_id', '=', self.id), ('state', 'in', ['draft', 'sent']),('is_rental_order','=',True)]
+        quotations = self.mapped('order_ids').filtered(lambda l: l.state in ('draft', 'sent') and l.is_rental_order == True)
+        if len(quotations) == 1:
+            action['views'] = [(self.env.ref('sale_renting.rental_order_primary_form_view').id, 'form')]
+            action['res_id'] = quotations.id
         return action
+        # action['domain'] = [('opportunity_id', '=', self.id), ('state', 'in', ['draft', 'sent']),('is_rental_order','=',True)]
+        # return action
 
     def action_view_rental_order(self):
-        action = self.action_view_sale_order()
+        action = self.env.ref('sale_renting.rental_order_action').read()[0]
+        action['context'] = {
+            'search_default_partner_id': self.partner_id.id,
+            'default_partner_id': self.partner_id.id,
+            'default_opportunity_id': self.id,
+            'default_is_rental_order': True,
+            'default_rent_ok': 1,
+            'rental_products': True,
+        }
         action['domain'] = [('opportunity_id', '=', self.id), ('state', 'not in', ('draft', 'sent', 'cancel')),('is_rental_order','=',True)]
+        orders = self.mapped('order_ids').filtered(lambda l: l.state not in ('draft', 'sent', 'cancel') and l.is_rental_order == True)
+        if len(orders) == 1:
+            action['views'] = [(self.env.ref('sale_renting.rental_order_primary_form_view').id, 'form')]
+            action['res_id'] = orders.id
         return action
+        # action['domain'] = [('opportunity_id', '=', self.id), ('state', 'not in', ('draft', 'sent', 'cancel')),('is_rental_order','=',True)]
+        # return action
 
 class SecondTeam(models.Model):
     _name = "second.sales.team"
