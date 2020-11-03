@@ -16,7 +16,7 @@ class CrmLead(models.Model):
     sales_weight = fields.Float(string="Sales weight", store=True, compute="_compute_selected_quotation")
 
     # For Leads only start
-    lead_weight = fields.Float(string="Weight (Appr.)")
+    lead_weight = fields.Float(string="Weight (approx. tn)")
     lead_sale_value = fields.Float(string="New Sale Deal Value (Appr.)", compute="_compute_leads_value")
     lead_usedsale_value = fields.Float(string="Used Sale Deal Value (Appr.)", compute="_compute_leads_value")
     lead_rental_value = fields.Float(string="Rental Deal Value (Appr.)", compute="_compute_leads_value")
@@ -97,9 +97,34 @@ class CrmLead(models.Model):
 
     # create new rental quotation
     def action_rental_quotations_new(self):
-        action = self.action_sale_quotations_new()
-        action['context']['default_is_rental_order'] = True
-        return action
+        if not self.partner_id:
+            raise UserError(_("Please select or create a customer before creating a quote."))
+        return self.action_new_rental_quotation()
+
+    def _get_action_rental_context(self):
+        return {
+            "search_default_opportunity_id": self.id,
+            "default_opportunity_id": self.id,
+            "search_default_partner_id": self.partner_id.id,
+            "default_partner_id": self.partner_id.id,
+            "default_team_id": self.team_id.id,
+            "default_campaign_id": self.campaign_id.id,
+            "default_medium_id": self.medium_id.id,
+            "default_origin": self.name,
+            "default_source_id": self.source_id.id,
+            "default_company_id": self.company_id.id or self.env.company.id,
+            "default_is_rental_order": True,
+        }
+
+    def action_new_rental_quotation(self):
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Rental Orders"),
+            "res_model": "sale.order",
+            "view_mode": "form",
+            "views": [(self.env.ref("sale_renting.rental_order_primary_form_view").id, "form")],
+            "context": self._get_action_rental_context(),
+        }
     
  
     # stat button and filters for the sale order

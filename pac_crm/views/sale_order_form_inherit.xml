@@ -51,10 +51,10 @@
             </xpath>
 
             <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='tax_id'][1]" position="replace">
-                <field name="tax_id" attrs="{'column_invisible': True}"/>
+                <field name="tax_id" optional="hide"/>
             </xpath>
             <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='name']" position="replace">
-                <field name="name" attrs="{'column_invisible': True}"/>
+                <field name="name" widget="section_and_note_text" optional="hide"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">
