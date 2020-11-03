@@ -25,7 +25,7 @@ class SaleOrder(models.Model):
     file_data = fields.Binary('import file', )
 
     total_weight = fields.Float(string="Total Weight", compute="_compute_total_weight_parts")
-    total_part = fields.Float(string="Total Parts", compute="_compute_total_weight_parts")
+    total_part = fields.Integer(string="Total Parts", compute="_compute_total_weight_parts")
 
     replacement_price = fields.Monetary(string='Replacement', store=True, compute='_compute_total_weight_parts') 
 
@@ -186,7 +186,7 @@ class SaleOrder(models.Model):
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
                 'amount_discount': amount_discount,
-                'amount_total': amount_untaxed + amount_tax - amount_discount,
+                'amount_total': amount_untaxed + amount_tax,
             })
 
     def _prepare_invoice(self,):
@@ -263,3 +263,19 @@ class SaleOrderLine(models.Model):
                 if line.product_id.rack_qty > 0:
                     rack = line.product_id.rack_qty  
             line.rack_qty = line.product_uom_qty / rack
+
+    @api.depends('product_uom_qty', 'discount', 'unit_price_discount', 'tax_id')
+    def _compute_amount(self):
+        """
+        Compute the amounts of the SO line.
+        """
+        for line in self:
+            price = line.unit_price_discount * (1 - (line.discount or 0.0) / 100.0)
+            taxes = line.tax_id.compute_all(price, line.order_id.currency_id, line.product_uom_qty, product=line.product_id, partner=line.order_id.partner_shipping_id)
+            line.update({
+                'price_tax': sum(t.get('amount', 0.0) for t in taxes.get('taxes', [])),
+                'price_total': taxes['total_included'],
+                'price_subtotal': taxes['total_excluded'],
+            })
+            if self.env.context.get('import_file', False) and not self.env.user.user_has_groups('account.group_account_manager'):
+                line.tax_id.invalidate_cache(['invoice_repartition_line_ids'], [line.tax_id.id])
