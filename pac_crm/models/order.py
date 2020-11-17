@@ -206,7 +206,10 @@ class SaleOrder(models.Model):
         is_authorize = True
         return True
 
-
+    def _compute_has_late_lines(self):
+        for order in self:
+            order.has_late_lines = False
+            
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
@@ -226,6 +229,19 @@ class SaleOrderLine(models.Model):
                 line.weight = line.product_id.weight
             else:
                 line.weight = 0
+    
+    @api.onchange('product_id')
+    def _onchange_price_rental(self):
+        for line in self:
+            
+            if line.product_id and line.order_id.is_rental_order:
+                line.is_rental = True
+                price = 0
+                for pricing in line.product_id.rental_pricing_ids:
+                    if pricing.unit == 'month':
+                        price = pricing.price
+                        break
+                line.price_unit = price
             
     @api.depends('product_id','replacement','price_unit', 'order_id.discount_ids', 'order_id.replace_discount_ids')
     def _compute_prices(self):
@@ -279,3 +295,11 @@ class SaleOrderLine(models.Model):
             })
             if self.env.context.get('import_file', False) and not self.env.user.user_has_groups('account.group_account_manager'):
                 line.tax_id.invalidate_cache(['invoice_repartition_line_ids'], [line.tax_id.id])
+
+    def get_rental_order_line_description(self):
+        return ''
+    
+    def _compute_reservation_begin(self):
+        return
+
+    
