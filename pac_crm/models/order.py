@@ -4,7 +4,7 @@
 from odoo import api, fields, models, _, SUPERUSER_ID
 import base64
 import xlrd
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_round
 import math
 
@@ -28,6 +28,15 @@ class SaleOrder(models.Model):
     total_part = fields.Integer(string="Total Parts", compute="_compute_total_weight_parts")
 
     replacement_price = fields.Monetary(string='Replacement', store=True, compute='_compute_total_weight_parts') 
+
+    @api.onchange('order_line')
+    def _onchange_avoid_sol_dup(self):
+        for order in self:
+            for line in order.order_line:
+                if len(order.order_line.filtered(lambda sol: sol.product_id == line.product_id)) > 1:
+                    raise ValidationError(_(
+                        '{} already exists in this order'.format(line.product_id.name)))
+                else: continue
 
     @api.depends('order_line')
     def _compute_total_weight_parts(self):
@@ -74,7 +83,7 @@ class SaleOrder(models.Model):
         # create the method
         self.valid_product_code(archive_lines)
 
-        racks = {}
+        # racks = {}
 
         for line in archive_lines:
             code = str(line.get('codigo_producto',"")).strip()
@@ -84,10 +93,10 @@ class SaleOrder(models.Model):
             racks_qty = 1
             if product_id.rack_qty > 0:
                 racks_qty = quantity / product_id.rack_qty
-            if product_id.rack_name and racks.get(product_id.rack_name):
-                racks[product_id.rack_name] += racks_qty 
-            elif product_id.rack_name:
-                racks[product_id.rack_name] = racks_qty
+            # if product_id.rack_name and racks.get(product_id.rack_name):
+            #     racks[product_id.rack_name] += racks_qty 
+            # elif product_id.rack_name:
+            #     racks[product_id.rack_name] = racks_qty
 
             if not self.is_rental_order:
                 if self and product_id:
@@ -123,25 +132,87 @@ class SaleOrder(models.Model):
                         'total_weight': product_id.weight * float(quantity)
                     }
             self.env['sale.order.line'].create(vals)
-        if not self.is_rental_order:
-            for key in racks.keys():
-                product_id = self.env['product.product'].search([('default_code','=',key)])
-                if self and product_id:
-                    vals = {
-                        'order_id': self.id,
-                        'product_id': product_id.id,
-                        'product_uom_qty': math.ceil(racks[key]),
-                        'price_unit': product_id.lst_price,
-                        'product_uom': product_id.product_tmpl_id.uom_po_id.id,
-                        'name': product_id.name,
-                        'weight': product_id.weight,
-                        'rack_qty' : 0,
-                        'total_weight': product_id.weight * math.ceil(racks[key])
-                    }
-                self.env['sale.order.line'].create(vals)
+
+        # if not self.is_rental_order:
+        #     for key in racks.keys():
+        #         product_id = self.env['product.product'].search([('default_code','=',key)])
+        #         if self and product_id:
+        #             vals = {
+        #                 'order_id': self.id,
+        #                 'product_id': product_id.id,
+        #                 'product_uom_qty': math.ceil(racks[key]),
+        #                 'price_unit': product_id.lst_price,
+        #                 'product_uom': product_id.product_tmpl_id.uom_po_id.id,
+        #                 'name': product_id.name,
+        #                 'weight': product_id.weight,
+        #                 'rack_qty' : 0,
+        #                 'total_weight': product_id.weight * math.ceil(racks[key])
+        #             }
+        #         self.env['sale.order.line'].create(vals)
+        
+        message_id = self.env['message.wizard'].create({'message': _("Import was a success")})
+        return {
+            'name': _('Successfully'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'message.wizard',
+            'res_id': message_id.id,
+            'target': 'new'
+        }
 
         # use "racks" to create sale order.line for it
- 
+    def add_racks(self):
+        racks = {}
+        for line in self.order_line:
+            racks_qty = 1
+            product_id = line.product_id
+            quantity = line.product_uom_qty 
+
+            if product_id.rack_qty > 0:
+                racks_qty = quantity / product_id.rack_qty
+            if product_id.rack_name and racks.get(product_id.rack_name):
+                racks[product_id.rack_name] += racks_qty 
+            elif product_id.rack_name:
+                racks[product_id.rack_name] = racks_qty
+        
+        for key in racks.keys():
+            rack_product_id = self.env['product.product'].search([('default_code','=',key)])
+            if self and product_id:
+                vals = {
+                    'order_id': self.id,
+                    'product_id': rack_product_id.id,
+                    'product_uom_qty': math.ceil(racks[key]),
+                    'price_unit': rack_product_id.lst_price,
+                    'product_uom': rack_product_id.product_tmpl_id.uom_po_id.id,
+                    'name': rack_product_id.name,
+                    'weight': rack_product_id.weight,
+                    'rack_qty' : 0,
+                    'total_weight': rack_product_id.weight * math.ceil(racks[key])
+                }
+                if self.is_rental_order:
+                    price = 0.0
+                    if rack_product_id.rental_pricing_ids:
+                        for pricing in rack_product_id.rental_pricing_ids:
+                            if pricing.unit == 'month':
+                                price = pricing.price
+                                break
+                                
+                    vals['price_unit'] = price
+            
+
+            self.env['sale.order.line'].create(vals)
+
+        message_id = self.env['message.wizard'].create({'message': _("Racks are added successfully")})
+        return {
+            'name': _('Successfully'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'message.wizard',
+            'res_id': message_id.id,
+            'target': 'new'
+        }
+
+
     def valid_product_code(self, archive_lines):
         products = self.env['product.product']
         for line in archive_lines:
@@ -217,8 +288,8 @@ class SaleOrderLine(models.Model):
     total_weight = fields.Float(string="Total Weight KG", readonly=True, compute="_compute_total_weight")
     rack_qty = fields.Float(string="Rack Qty", default=0, readonly=True, compute="_compute_total_weight")
     
-    replacement = fields.Float(string="Replacement Cost", )
-    discount_replace = fields.Float(string="Replacement Discount Cost", compute="_compute_prices")
+    replacement = fields.Float(string="Unit Replacement Cost", )
+    discount_replace = fields.Float(string="Unit Replacement Discount Cost", compute="_compute_prices")
     replacement_total = fields.Float(string="Replacement Subtotal", compute="_compute_replacement_total")
     unit_price_discount = fields.Float(string="Unit Price Discount", compute="_compute_prices")
 

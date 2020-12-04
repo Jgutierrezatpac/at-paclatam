@@ -10,6 +10,7 @@
                 <group class="col-sm-2">
                     <field name="total_weight"/>
                     <field name="total_part"/>
+                    <button name="add_racks" string="Add Racks" type="object" class="oe_highlight" />
                 </group>
             </xpath>
 
@@ -44,6 +45,9 @@
                 <field name="rack_qty"/>
                 <field name="replacement" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
                 <field name="discount_replace" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
+                
+            </xpath>
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_unit']" position="after">
                 <field name="unit_price_discount"/>
             </xpath>
             <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_subtotal']" position="after">
