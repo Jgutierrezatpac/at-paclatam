@@ -89,18 +89,18 @@
                 <field name="total_selected_sales"/>
                 <field name="total_selected_used"/>
                 <field name="total_selected_rental"/>
-                <!-- <field name="used_sale_value"/>
+                <field name="used_sale_value"/>
                 <field name="sale_value"/>
-                <field name="rental_value"/> -->
+                <field name="rental_value"/>
 
                 <!-- <field name="lead_weight"/>
                 <field name="sales_new_rate"/>
                 <field name="sales_old_rate"/>
                 <field name="rental_rate"/> -->
                 
-                <field name="lead_sale_value"/>
+                <!-- <field name="lead_sale_value"/>
                 <field name="lead_usedsale_value"/>
-                <field name="lead_rental_value"/>
+                <field name="lead_rental_value"/> -->
             </field>
         </field>
     </record>

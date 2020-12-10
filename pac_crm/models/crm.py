@@ -20,9 +20,9 @@ class CrmLead(models.Model):
 
     # For Leads only start
     # lead_weight = fields.Float(string="Weight (approx. tn)")
-    lead_sale_value = fields.Float(string="New Sale Deal Value (Appr.)", compute="_compute_leads_value")
-    lead_usedsale_value = fields.Float(string="Used Sale Deal Value (Appr.)", compute="_compute_leads_value")
-    lead_rental_value = fields.Float(string="Rental Deal Value (Appr.)", compute="_compute_leads_value")
+    # lead_sale_value = fields.Float(string="New Sale Deal Value (Appr.)", compute="_compute_leads_value")
+    # lead_usedsale_value = fields.Float(string="Used Sale Deal Value (Appr.)", compute="_compute_leads_value")
+    # lead_rental_value = fields.Float(string="Rental Deal Value (Appr.)", compute="_compute_leads_value")
 
     # sales_new_rate = fields.Float(string="Sales New Rate")
     # sales_old_rate = fields.Float(string="Sales Used Rate")
@@ -46,23 +46,23 @@ class CrmLead(models.Model):
             else:
                 crm.is_order_calc = False 
 
-    @api.depends('num_months','sales_weight','rental_weight','total_selected_sales', 'total_selected_used', 'total_selected_rental', 'probability', 'rental_probability', 'used_probability')
-    def _compute_leads_value(self):
-        for lead in self:
-            lead.lead_sale_value = lead.sales_weight * lead.total_selected_sales * (lead.probability / 100.0)
-            lead.lead_usedsale_value = lead.sales_weight * lead.total_selected_used * (lead.used_probability / 100.0)
-            lead.lead_rental_value = lead.rental_weight * lead.total_selected_rental * (lead.rental_probability / 100.0)* lead.num_months
+    # @api.depends('num_months','sales_weight','rental_weight','total_selected_sales', 'total_selected_used', 'total_selected_rental', 'probability', 'rental_probability', 'used_probability')
+    # def _compute_leads_value(self):
+    #     for lead in self:
+    #         lead.lead_sale_value = lead.sales_weight * lead.total_selected_sales * (lead.probability / 100.0)
+    #         lead.lead_usedsale_value = lead.sales_weight * lead.total_selected_used * (lead.used_probability / 100.0)
+    #         lead.lead_rental_value = lead.rental_weight * lead.total_selected_rental * (lead.rental_probability / 100.0)* lead.num_months
 
     @api.onchange('quotation_count', 'rent_quotation_count', 'order_ids')
     def _compute_selected_quotation(self):
         for lead in self:
-            rental = lead.lead_rental_value 
-            sales = lead.lead_sale_value 
-            used = lead.lead_usedsale_value 
+            rental = lead.rental_value 
+            sales = lead.sale_value 
+            used = lead.used_sale_value 
             rental_weight = lead.rental_weight
             sales_weight = lead.sales_weight
             
-            if lead.is_order_calc > 0:
+            if lead.is_order_calc == True:
                 rental = sales = used = 0.0
                 rental_weight = sales_weight = 0
                 for order in lead.order_ids:
@@ -111,11 +111,17 @@ class CrmLead(models.Model):
     @api.depends('num_months','rental_probability', 'probability','total_selected_sales','total_selected_rental')
     def _compute_value(self):
         for lead in self:
-            if lead.is_order_calc > 0:
-                lead._compute_selected_quotation()
-            lead.used_sale_value = lead.total_selected_used * (lead.used_probability / 100.00)
-            lead.sale_value = lead.total_selected_sales * (lead.probability / 100.00)
-            lead.rental_value = lead.total_selected_rental * lead.num_months * (lead.rental_probability / 100.00)
+            
+            if lead.is_order_calc == False:
+                lead.sale_value = lead.sales_weight * lead.total_selected_sales * (lead.probability / 100.0)
+                lead.used_sale_value = lead.sales_weight * lead.total_selected_used * (lead.used_probability / 100.0)
+                lead.rental_value = lead.rental_weight * lead.total_selected_rental * (lead.rental_probability / 100.0)* lead.num_months
+                 
+            else:
+                self._compute_selected_quotation()
+                lead.used_sale_value = lead.total_selected_used * (lead.used_probability / 100.00)
+                lead.sale_value = lead.total_selected_sales * (lead.probability / 100.00)
+                lead.rental_value = lead.total_selected_rental * lead.num_months * (lead.rental_probability / 100.00)
 
 
     # create new rental quotation
