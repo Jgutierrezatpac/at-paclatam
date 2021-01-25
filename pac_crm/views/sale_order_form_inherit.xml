@@ -22,7 +22,7 @@
 
             <field name="payment_term_id" position="after">
                 <field name="is_select" attrs="{'invisible': ['|',('opportunity_id','=',False),('state','not in', ['sent','draft'])]}"/>
-                <field name="is_used" attrs="{'invisible': ['|','|',('opportunity_id','=',False),('state','not in', ['sent','draft']),('is_rental_order','=',True)]}"/>
+                <field name="is_used" attrs="{'invisible': [('is_rental_order','=',True)],'readonly': [('state','not in', ['sent','draft'])]}"/>
             </field>
 
             <field name="partner_id" position="after">
@@ -39,7 +39,7 @@
                 <field name="replacement_price" attrs="{'invisible': [('is_rental_order','=',False)]}"/>
             </field>
 
-            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='product_uom_qty']" position="after">
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_unit']" position="before">
                 <field name="weight"/>
                 <field name="total_weight"/>
                 <field name="rack_qty"/>
