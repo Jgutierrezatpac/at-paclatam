@@ -13,6 +13,10 @@
                 <field name="sale_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="used_sale_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="rental_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                <field name="rental_per_weight"/>
+                <field name="newsale_per_weight"/>
+                <field name="oldsale_per_weight"/>
+
             </field>
 
             <field name="team_id" position="after">
