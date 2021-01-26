@@ -38,6 +38,9 @@ class CrmLead(models.Model):
     total_selected_used = fields.Monetary(string="Sales Used Rate", currency_field='company_currency', default=0)
 
     is_order_calc = fields.Boolean(string='CRM contains orders', default=False, compute='_compute_crm')
+    rental_per_weight = fields.Float(string="Rental rate per tn", store=True,compute="_compute_rate_per_weight")
+    newsale_per_weight = fields.Float(string="New Sale rate per tn", store=True,compute="_compute_rate_per_weight")
+    oldsale_per_weight = fields.Float(string="Old Sale rate per tn", store=True,compute="_compute_rate_per_weight")
 
     def _compute_crm(self):
         for crm in self:
@@ -108,7 +111,7 @@ class CrmLead(models.Model):
             lead.quotation_count -= lead.rent_quotation_count
             lead.sale_order_count -= lead.rental_order_count
 
-    @api.depends('num_months','rental_probability', 'probability','total_selected_sales','total_selected_rental')
+    @api.depends('num_months','rental_probability', 'probability','total_selected_sales','total_selected_rental','total_selected_used')
     def _compute_value(self):
         for lead in self:
             
@@ -123,6 +126,16 @@ class CrmLead(models.Model):
                 lead.sale_value = lead.total_selected_sales * (lead.probability / 100.00)
                 lead.rental_value = lead.total_selected_rental * lead.num_months * (lead.rental_probability / 100.00)
 
+        self._compute_rate_per_weight()
+        
+    @api.depends('total_selected_sales','total_selected_rental','total_selected_used','rental_weight','sales_weight')
+    def _compute_rate_per_weight(self):
+        for lead in self:
+            if lead.rental_weight > 0:
+                lead.rental_per_weight = lead.total_selected_rental / lead.rental_weight
+            if lead.sales_weight > 0:
+                lead.newsale_per_weight = lead.total_selected_sales / lead.sales_weight
+                lead.oldsale_per_weight = lead.total_selected_used / lead.sales_weight
 
     # create new rental quotation
     def action_rental_quotations_new(self):
