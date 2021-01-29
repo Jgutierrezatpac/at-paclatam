@@ -9,13 +9,14 @@
                 <field name="rental_order_count" invisible='1'/>
                 <field name="rental_weight"/>
                 <field name="sales_weight"/>
+                <field name="used_sales_weight"/>
                 <field name="num_months"/>
                 <field name="sale_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="used_sale_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="rental_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
-                <field name="rental_per_weight"/>
-                <field name="newsale_per_weight"/>
-                <field name="oldsale_per_weight"/>
+                <field name="total_selected_sales"/>
+                <field name="total_selected_used"/>
+                <field name="total_selected_rental"/>
 
             </field>
 
@@ -43,9 +44,11 @@
                 <field name="quotation_count" widget="statinfo" string="Sales Quotations"/>
             </field>
 
+
+<!-- revenues -->
             <field name="planned_revenue" position="replace">
                 <span class="oe_grey p-2"> Sales(New) </span>
-                <field name="total_selected_sales"/>
+                <field name="planned_revenue"/>
             </field>
             <field name="is_automated_probability" position="after">
                 <span class="oe_grey p-2" attrs="{'invisible': [('type', '!=', 'lead')]}"> Sales(New)</span>
@@ -56,7 +59,7 @@
                     <div class="col" attrs="{'invisible': [('type', '=', 'lead')]}">
                         <div class="o_row">
                             <span class="oe_grey p-2"> Sales(Used) </span>
-                            <field name="total_selected_used" class="oe_inline" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                            <field name="used_planned_revenue" class="oe_inline" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                             <span class="oe_grey p-2"> at </span>
                         </div>
                     </div>
@@ -71,7 +74,7 @@
                     <div class="col" attrs="{'invisible': [('type', '=', 'lead')]}">
                         <div class="o_row">
                             <span class="oe_grey p-2"> Rentals </span>
-                            <field name="total_selected_rental" class="oe_inline" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                            <field name="rental_planned_revenue" class="oe_inline" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                             <span class="oe_grey p-2"> at </span>
                         </div>
                     </div>
@@ -90,6 +93,7 @@
 
                 <field name="rental_weight"/>
                 <field name="sales_weight"/>
+                <field name="used_sales_weight"/>
                 <field name="total_selected_sales"/>
                 <field name="total_selected_used"/>
                 <field name="total_selected_rental"/>
