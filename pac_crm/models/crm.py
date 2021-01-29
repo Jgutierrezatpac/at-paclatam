@@ -73,7 +73,7 @@ class CrmLead(models.Model):
                             sales += order.amount_untaxed
                             sales_weight += order.total_weight
             lead.planned_revenue = sales 
-            lead.rental_planned_revenue = rental
+            lead.rental_planned_revenue = rental *lead.num_months
             lead.used_planned_revenue = used
             lead.rental_weight = rental_weight
             lead.sales_weight = sales_weight
