@@ -11,7 +11,7 @@
                 <field name="sales_weight"/>
                 <field name="used_sales_weight"/>
                 <field name="num_months"/>
-                <field name="sale_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                <field name="expected_revenue" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="used_sale_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="rental_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="total_selected_sales"/>
@@ -98,7 +98,7 @@
                 <field name="total_selected_used"/>
                 <field name="total_selected_rental"/>
                 <field name="used_sale_value"/>
-                <field name="sale_value"/>
+                <field name="expected_revenue"/>
                 <field name="rental_value"/>
 
                 <!-- <field name="lead_weight"/>
