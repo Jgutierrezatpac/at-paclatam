@@ -10,7 +10,7 @@ class CrmLead(models.Model):
     rental_probability = fields.Float(string='Rental Probability')
     used_probability = fields.Float(string='Used Probability')
     used_sale_value = fields.Float(string="Used Sale Deal Value", store=True, compute="_compute_value")
-    sale_value = fields.Float(string="Sale Deal Value", store=True, compute="_compute_value")
+    expected_revenue = fields.Float(string="New Sale Deal Value", store=True, compute="_compute_value")
     rental_value = fields.Float(string="Rental Deal Value", store=True,compute="_compute_value")
 
     rental_weight = fields.Float(string="Rental weight", store=True, default=0)
@@ -73,7 +73,7 @@ class CrmLead(models.Model):
                             sales += order.amount_untaxed
                             sales_weight += order.total_weight
             lead.planned_revenue = sales 
-            lead.rental_planned_revenue = rental *lead.num_months
+            lead.rental_planned_revenue = rental 
             lead.used_planned_revenue = used
             lead.rental_weight = rental_weight
             lead.sales_weight = sales_weight
@@ -116,14 +116,14 @@ class CrmLead(models.Model):
                 # lead.used_planned_revenue = lead.total_selected_used * lead.sales_weight
                 # lead.rental_planned_revenue = lead.total_selected_rental * lead.rental_weight *lead.num_months
 
-                lead.sale_value = lead.planned_revenue * (lead.probability / 100.0)
+                lead.expected_revenue = lead.planned_revenue * (lead.probability / 100.0)
                 lead.used_sale_value = lead.used_planned_revenue * (lead.used_probability / 100.0)
                 lead.rental_value = lead.rental_planned_revenue * (lead.rental_probability / 100.0)
                  
             else:
                 
                 lead.used_sale_value = lead.used_planned_revenue * (lead.used_probability / 100.00)
-                lead.sale_value = lead.planned_revenue * (lead.probability / 100.00)
+                lead.expected_revenue = lead.planned_revenue * (lead.probability / 100.00)
                 lead.rental_value = lead.rental_planned_revenue *  (lead.rental_probability / 100.00)
 
                 lead._compute_rate_per_weight()
@@ -131,7 +131,7 @@ class CrmLead(models.Model):
     @api.depends('planned_revenue','rental_planned_revenue','used_planned_revenue','rental_weight','sales_weight')
     def _compute_rate_per_weight(self):
         if self.rental_weight > 0:
-            self.total_selected_rental = self.rental_planned_revenue / self.rental_weight * 1000
+            self.total_selected_rental = (self.rental_planned_revenue / self.rental_weight * 1000) / self.num_months
         else:
             self.total_selected_rental = 0
 
