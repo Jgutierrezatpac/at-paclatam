@@ -72,6 +72,8 @@ class CrmLead(models.Model):
                         else: 
                             sales += order.amount_untaxed
                             sales_weight += order.total_weight
+                rental *= lead.num_months
+
             lead.planned_revenue = sales 
             lead.rental_planned_revenue = rental 
             lead.used_planned_revenue = used
@@ -131,7 +133,9 @@ class CrmLead(models.Model):
     @api.depends('planned_revenue','rental_planned_revenue','used_planned_revenue','rental_weight','sales_weight')
     def _compute_rate_per_weight(self):
         if self.rental_weight > 0:
-            self.total_selected_rental = (self.rental_planned_revenue / self.rental_weight * 1000) / self.num_months
+            self.total_selected_rental = (self.rental_planned_revenue / self.rental_weight * 1000)
+            if self.is_order_calc == True:
+                self.total_selected_rental = self.total_selected_rental / self.num_months
         else:
             self.total_selected_rental = 0
 
