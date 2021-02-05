@@ -7,8 +7,9 @@ class CrmLead(models.Model):
 
     num_months = fields.Integer(string='Number of Months', default=0)
     second_team_id = fields.Many2one('second.sales.team', string="Second Sales Team")
+    probability = fields.Float(string='New Sale Probability')
     rental_probability = fields.Float(string='Rental Probability')
-    used_probability = fields.Float(string='Used Probability')
+    used_probability = fields.Float(string='Used Sale Probability')
     used_sale_value = fields.Float(string="Used Sale Deal Value", store=True, compute="_compute_value")
     expected_revenue = fields.Float(string="New Sale Deal Value", store=True, compute="_compute_value")
     rental_value = fields.Float(string="Rental Deal Value", store=True,compute="_compute_value")
