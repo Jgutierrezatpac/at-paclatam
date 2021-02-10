@@ -234,6 +234,13 @@ class SaleOrder(models.Model):
                     code = self.env.ref('pac_crm.rental_order_sequence').code
                     name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
                 vals['name'] = name
+            elif vals['is_used']:
+                code = self.env.ref('pac_crm.used_sale_order_sequence').code
+                name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
+                while self.env['sale.order'].search_count([('name', '=', name)]) >= 1:
+                    code = self.env.ref('pac_crm.rental_order_sequence').code
+                    name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
+                vals['name'] = name
         return super(SaleOrder, self).create(vals)
 
    
