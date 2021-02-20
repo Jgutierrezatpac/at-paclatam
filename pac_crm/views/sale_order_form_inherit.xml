@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="sale_order_form_inherit_pac" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.pac</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+        <field name="sequence">24</field>
+            <xpath expr="//group[@name='note_group']/group[1]" position="before">
+                <group class="col-sm-2">
+                    <field name="total_weight"/>
+                    <field name="total_part"/>
+                    <button name="add_racks" string="Add Racks" type="object" class="oe_highlight" />
+                </group>
+            </xpath>
+
+            <xpath expr="//field[@name='state']" position="before">
+                <field name="is_authorize" invisible="1"/>
+                <button string="Approve" type="object" name="action_approve" class="oe_highlight"
+                        groups="sales_team.group_sale_manager" attrs="{'invisible': ['|',('need_authorize','=',False), ('is_authorize','=',True)]}"/>
+            </xpath>
+
+            <field name="payment_term_id" position="after">
+                <field name="is_select" attrs="{'invisible': ['|',('opportunity_id','=',False),('state','not in', ['sent','draft'])]}"/>
+                <field name="is_used" attrs="{'invisible': [('is_rental_order','=',True)],'readonly': [('state','not in', ['sent','draft'])]}"/>
+            </field>
+
+            <field name="partner_id" position="after">
+                <field name="discount_ids" widget="many2many_tags"/>
+                <field name="replace_discount_ids" widget="many2many_tags" attrs="{'invisible': [('is_rental_order','=', False)]}"/>
+                <field name="need_authorize"/>
+            </field>
+
+            <field name="amount_untaxed" position="after">
+                <field name="amount_discount"/>
+            </field>
+
+            <field name="amount_total" position="after">
+                <field name="replacement_price" attrs="{'invisible': [('is_rental_order','=',False)]}"/>
+            </field>
+
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_unit']" position="before">
+                <field name="weight"/>
+                <field name="total_weight"/>
+                <field name="rack_qty"/>
+                <field name="replacement" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
+                <field name="discount_replace" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
+                
+            </xpath>
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_unit']" position="after">
+                <field name="unit_price_discount"/>
+            </xpath>
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='price_subtotal']" position="after">
+                <field name="replacement_total" attrs="{'column_invisible': [('parent.is_rental_order','=', False)]}"/>
+            </xpath>
+
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='tax_id'][1]" position="replace">
+                <field name="tax_id" optional="hide"/>
+            </xpath>
+            <xpath expr="//notebook/page[@name='order_lines']//tree/field[@name='name']" position="replace">
+                <field name="name" widget="section_and_note_text" optional="hide"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Import Products" name="import_products">
+                    <div>
+                        <group>
+                            <field name="file_name"/>
+                            <field name="file_data" widget="binary" filename="file_name" accept=".csv, .xls"/>
+                        </group>
+                        <group>
+                               <button name="import_file" string="Import" type="object" class="oe_highlight"/>
+                        </group>
+                    </div>
+                    <div>
+                        <p><b>!!  Importante  !!</b><br/>
+                        <b>*</b> Todos los textos de la cabecera deben ser idénticos y son obligatorios en el archivo.<br/>
+                        <b>*</b> Por cada línea tiene que colocar "codigo_producto".<br/>
+                        <b>*</b> El campo "Variante_producto" no es obligatorio para todos los productos, solo para los que tienen variantes.<br/>
+                        <b>*</b> El campo cantidad" es obligatorio.</p>
+                    </div>
+                    <div>                        
+                        <table class="table table-dark">
+                            <tr>
+                            <th>codigo_producto</th> 
+                            <th>variante_producto</th> 
+                            <th>cantidad</th>
+                            </tr>
+                            <tr>
+                            <td>04.01.202.10</td>
+                            <td>Regular</td>
+                            <td>13</td>
+                            </tr>
+                            <tr>
+                            <td>04.01.202.10</td>
+                            <td/>
+                            <td>18</td>
+                            </tr>
+                        </table>
+                    </div>
+                   
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

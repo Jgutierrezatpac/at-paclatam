@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="crm_form_view_inherit_pac" model="ir.ui.view">
+        <field name="name">crm.form.view.inherit</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="sale_crm.crm_case_form_view_oppor"/>
+        <field name="arch" type="xml">
+            <field name="date_deadline" position="after">
+                <field name="rental_order_count" invisible='1'/>
+                <field name="rental_weight"/>
+                <field name="sales_weight"/>
+                <field name="used_sales_weight"/>
+                <field name="num_months"/>
+                <field name="expected_revenue" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                <field name="used_sale_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                <field name="rental_value" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                <field name="total_selected_sales"/>
+                <field name="total_selected_used"/>
+                <field name="total_selected_rental"/>
+
+            </field>
+
+            <field name="team_id" position="after">
+                <field name="second_team_id" widget="selection" domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]"/>
+            </field>
+
+            <xpath expr="//button[@name='action_set_won_rainbowman']" position="before">
+                <button string="New Rental" name="action_rental_quotations_new" type="object" class="oe_highlight" attrs="{'invisible': ['|', ('type', '=', 'lead'), '&amp;', ('probability', '=', 0), ('active', '=', False)]}"/>
+            </xpath>
+
+            <button name="action_schedule_meeting" position="after">
+                <button class="oe_stat_button" type="object" name="action_view_rental_quotation" icon="fa-exchange" attrs="{'invisible': [('type', '=', 'lead')]}">
+                    <field name="rent_quotation_count" widget="statinfo" string="Rental Quotation"/>
+                </button>
+                <button class="oe_stat_button" type="object" attrs="{'invisible': ['|', ('rental_order_count', '=', 0), ('type', '=', 'lead')]}" name="action_view_rental_order" icon="fa-usd">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value"><field name="rental_amount_total" widget="monetary" options="{'currency_field': 'company_currency'}"/></span>
+                        <span class="o_stat_text"> Rental</span>
+                        <field name="rental_order_count" invisible="1"/>
+                    </div>
+                </button>
+            </button>
+            <field name="quotation_count" position="replace">
+                <field name="quotation_count" widget="statinfo" string="Sales Quotations"/>
+            </field>
+
+
+<!-- revenues -->
+            <field name="planned_revenue" position="replace">
+                <span class="oe_grey p-2"> Sales(New) </span>
+                <field name="planned_revenue"/>
+            </field>
+            <field name="is_automated_probability" position="after">
+                <span class="oe_grey p-2" attrs="{'invisible': [('type', '!=', 'lead')]}"> Sales(New)</span>
+            </field>
+
+            <xpath expr="//div[@class='oe_title']" position="inside">
+                <h2 class="o_row row no-gutters d-flex">
+                    <div class="col" attrs="{'invisible': [('type', '=', 'lead')]}">
+                        <div class="o_row">
+                            <span class="oe_grey p-2"> Sales(Used) </span>
+                            <field name="used_planned_revenue" class="oe_inline" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                            <span class="oe_grey p-2"> at </span>
+                        </div>
+                    </div>
+                    <div id="probability" class="o_row d-flex">
+                        <span class="oe_grey p-2" attrs="{'invisible': [('type', '!=', 'lead')]}"> Sales(Used) </span>
+                        <field name="used_probability" widget="float" class="oe_inline"/>
+                        <span class="oe_grey"> %</span>
+                    </div>
+                </h2>
+
+                <h2 class="o_row row no-gutters d-flex">
+                    <div class="col" attrs="{'invisible': [('type', '=', 'lead')]}">
+                        <div class="o_row">
+                            <span class="oe_grey p-2"> Rentals </span>
+                            <field name="rental_planned_revenue" class="oe_inline" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                            <span class="oe_grey p-2"> at </span>
+                        </div>
+                    </div>
+                    <div id="probability" class="o_row d-flex">
+                        <span class="oe_grey p-2" attrs="{'invisible': [('type', '!=', 'lead')]}"> Rentals </span>
+                        <field name="rental_probability" widget="float" class="oe_inline"/>
+                        <span class="oe_grey"> %</span>
+                    </div>
+                </h2>
+            </xpath>
+
+
+            <field name="mobile" position="after">
+                <field name="date_deadline"/>
+                <field name="num_months"/>
+
+                <field name="rental_weight"/>
+                <field name="sales_weight"/>
+                <field name="used_sales_weight"/>
+                <field name="total_selected_sales"/>
+                <field name="total_selected_used"/>
+                <field name="total_selected_rental"/>
+                <field name="used_sale_value"/>
+                <field name="expected_revenue"/>
+                <field name="rental_value"/>
+
+                <!-- <field name="lead_weight"/>
+                <field name="sales_new_rate"/>
+                <field name="sales_old_rate"/>
+                <field name="rental_rate"/> -->
+                
+                <!-- <field name="lead_sale_value"/>
+                <field name="lead_usedsale_value"/>
+                <field name="lead_rental_value"/> -->
+            </field>
+        </field>
+    </record>
+</odoo>
