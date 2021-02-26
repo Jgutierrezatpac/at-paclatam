@@ -177,7 +177,7 @@ class SaleOrder(models.Model):
         
         for key in racks.keys():
             rack_product_id = self.env['product.product'].search([('default_code','=',key)])
-            if self and product_id:
+            if self and rack_product_id:
                 vals = {
                     'order_id': self.id,
                     'product_id': rack_product_id.id,
@@ -200,7 +200,7 @@ class SaleOrder(models.Model):
                     vals['price_unit'] = price
             
 
-            self.env['sale.order.line'].create(vals)
+                self.env['sale.order.line'].create(vals)
 
         message_id = self.env['message.wizard'].create({'message': _("Racks are added successfully")})
         return {
