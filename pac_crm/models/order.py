@@ -116,7 +116,7 @@ class SaleOrder(models.Model):
                     price = 0
                     if product_id.rental_pricing_ids:
                         for pricing in product_id.rental_pricing_ids:
-                            if pricing.unit == 'month':
+                            if pricing.unit == 'month' and pricing.company_id == self.env.company.id:
                                 price = pricing.price
                                 break
                     vals = {
@@ -193,7 +193,7 @@ class SaleOrder(models.Model):
                     price = 0.0
                     if rack_product_id.rental_pricing_ids:
                         for pricing in rack_product_id.rental_pricing_ids:
-                            if pricing.unit == 'month':
+                            if pricing.unit == 'month' and pricing.company_id == self.env.company.id:
                                 price = pricing.price
                                 break
                                 
@@ -296,9 +296,9 @@ class SaleOrderLine(models.Model):
     rack_qty = fields.Float(string="Rack Qty", default=0, readonly=True, compute="_compute_total_weight")
     
     replacement = fields.Float(string="Unit Replacement Cost", )
-    discount_replace = fields.Float(string="Unit Replacement Discount Cost", compute="_compute_prices")
+    discount_replace = fields.Float(string="Unit Replacement Discount Cost", digits='Product Discount Unit of Measure',compute="_compute_prices")
     replacement_total = fields.Float(string="Replacement Subtotal", compute="_compute_replacement_total")
-    unit_price_discount = fields.Float(string="Unit Price Discount", compute="_compute_prices")
+    unit_price_discount = fields.Float(string="Unit Price Discount", digits='Product Discount Unit of Measure',compute="_compute_prices")
 
     @api.depends('product_id', 'product_id.weight')
     def _compute_weight(self):
@@ -315,8 +315,10 @@ class SaleOrderLine(models.Model):
             if line.product_id and line.order_id.is_rental_order:
                 line.is_rental = True
                 price = 0
+                # pricing_list = line.product_id.rental_pricing_ids.filtered(lambda pricing: pricing.unit == 'month' and (pricing.company_id == self.env.company or not pricing.company_id))
                 for pricing in line.product_id.rental_pricing_ids:
-                    if pricing.unit == 'month':
+                    print(pricing.company_id,'\n\n\n')
+                    if pricing.unit == 'month' and pricing.company_id == self.env.company:
                         price = pricing.price
                         break
                 line.price_unit = price
