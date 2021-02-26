@@ -135,7 +135,7 @@ class CrmLead(models.Model):
     def _compute_rate_per_weight(self):
         if self.rental_weight > 0:
             self.total_selected_rental = (self.rental_planned_revenue / self.rental_weight * 1000)
-            if self.is_order_calc == True:
+            if self.is_order_calc == True and self.num_months > 0:
                 self.total_selected_rental = self.total_selected_rental / self.num_months
         else:
             self.total_selected_rental = 0
