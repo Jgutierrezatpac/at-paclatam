@@ -116,7 +116,7 @@ class SaleOrder(models.Model):
                     price = 0
                     if product_id.rental_pricing_ids:
                         for pricing in product_id.rental_pricing_ids:
-                            if pricing.unit == 'month' and pricing.company_id == self.env.company.id:
+                            if pricing.unit == 'month' and pricing.company_id == self.env.company:
                                 price = pricing.price
                                 break
                     vals = {
@@ -193,7 +193,7 @@ class SaleOrder(models.Model):
                     price = 0.0
                     if rack_product_id.rental_pricing_ids:
                         for pricing in rack_product_id.rental_pricing_ids:
-                            if pricing.unit == 'month' and pricing.company_id == self.env.company.id:
+                            if pricing.unit == 'month' and pricing.company_id == self.env.company:
                                 price = pricing.price
                                 break
                                 
