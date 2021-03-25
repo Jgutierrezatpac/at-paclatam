@@ -114,7 +114,11 @@ class SaleOrder(models.Model):
             else:  
                 if self and product_id:
                     price = 0
+                    rent = False
+                    product_id = product_id.with_context(rent=True, rental_products=True, pricelist=self.pricelist_id)
                     if product_id.rental_pricing_ids:
+                        if product_id.rent_ok:
+                            rent = True
                         for pricing in product_id.rental_pricing_ids:
                             if pricing.unit == 'month' and pricing.company_id == self.env.company:
                                 price = pricing.price
@@ -129,26 +133,11 @@ class SaleOrder(models.Model):
                         'name': product_id.name,
                         'weight': product_id.weight,
                         'rack_qty': racks_qty,
-                        'total_weight': product_id.weight * float(quantity)
+                        'total_weight': product_id.weight * float(quantity),
+                        'is_product_rentable':rent,
+                        'is_rental': rent
                     }
             self.env['sale.order.line'].create(vals)
-
-        # if not self.is_rental_order:
-        #     for key in racks.keys():
-        #         product_id = self.env['product.product'].search([('default_code','=',key)])
-        #         if self and product_id:
-        #             vals = {
-        #                 'order_id': self.id,
-        #                 'product_id': product_id.id,
-        #                 'product_uom_qty': math.ceil(racks[key]),
-        #                 'price_unit': product_id.lst_price,
-        #                 'product_uom': product_id.product_tmpl_id.uom_po_id.id,
-        #                 'name': product_id.name,
-        #                 'weight': product_id.weight,
-        #                 'rack_qty' : 0,
-        #                 'total_weight': product_id.weight * math.ceil(racks[key])
-        #             }
-        #         self.env['sale.order.line'].create(vals)
         
         message_id = self.env['message.wizard'].create({'message': _("Import was a success")})
         return {
