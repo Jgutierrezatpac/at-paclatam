@@ -120,7 +120,7 @@ class SaleOrder(models.Model):
                         if product_id.rent_ok:
                             rent = True
                         for pricing in product_id.rental_pricing_ids:
-                            if pricing.unit == 'month' and pricing.company_id == self.env.company:
+                            if product_id.id in pricing.product_variant_ids.ids and pricing.unit == 'month' and pricing.company_id == self.env.company:
                                 price = pricing.price
                                 break
                     vals = {
@@ -306,8 +306,7 @@ class SaleOrderLine(models.Model):
                 price = 0
                 # pricing_list = line.product_id.rental_pricing_ids.filtered(lambda pricing: pricing.unit == 'month' and (pricing.company_id == self.env.company or not pricing.company_id))
                 for pricing in line.product_id.rental_pricing_ids:
-                    print(pricing.company_id,'\n\n\n')
-                    if pricing.unit == 'month' and pricing.company_id == self.env.company:
+                    if line.product_id.id in pricing.product_variant_ids.ids and pricing.unit == 'month' and pricing.company_id == self.env.company:
                         price = pricing.price
                         break
                 line.price_unit = price
