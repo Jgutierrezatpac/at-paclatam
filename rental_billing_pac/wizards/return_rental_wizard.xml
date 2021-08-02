@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- RENTAL Return ORDER LINES : Rental RETURN WIZARD -->
+    <record id="return_rental_order_wizard_view_form" model="ir.ui.view">
+        <field name="name">return.rental.order.wizard.form</field>
+        <field name="model">return.rental.order.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <field name="has_late_lines" invisible="1"/>
+                    <field name="order_id" invisible="1"/>
+                    <field name="return_rental_wizard_line_ids">
+                        <tree create="false" editable="top">
+                            <field name="product_id" readonly="1" force_save="1" options="{'no_open': True}"/>
+                            <field name="order_line_id" invisible="1"/>
+                            <field name="return_rental_order_wizard_id" invisible="1"/>
+                            <field name="qty_pickedup"/>
+                            <field name="qty_returned"/>
+                            <field name="is_late" invisible="1"/>
+                        </tree>
+                    </field>
+                    <footer>
+                        <button name="return_rental_products" string="Return Products" type="object"
+                                class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

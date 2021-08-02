@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--Picking Type form-->
+    <record id="view_picking_type_form_inherit_rental_billing_pac" model="ir.ui.view">
+        <field name="name">view.picking.type.form.inherit.rental.billing.pac</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.view_picking_type_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="is_rental_operation_type"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
