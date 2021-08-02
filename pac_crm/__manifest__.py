@@ -30,7 +30,6 @@
         'views/second_team_views.xml',
         'views/product_inherit_form.xml',
         'views/partner_inherit_form.xml',
-        'views/assets.xml',
         'wizard/success_message.xml'
     ],
     # only loaded in demonstration mode
