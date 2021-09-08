@@ -13,7 +13,7 @@ class ResPartner(models.Model):
     def create(self, values):
         res = super(ResPartner, self).create(values)
         if not values.get('parent_id'):
-            rental_location = self.env.ref('rental_billing_custom.stock_location_rental',
+            rental_location = self.env.ref('rental_billing_pac.stock_location_rental',
                                            raise_if_not_found=True)
             new_location = self.env['stock.location'].create({
                 'name': values.get('name'),
