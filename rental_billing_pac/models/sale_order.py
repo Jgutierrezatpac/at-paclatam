@@ -9,6 +9,14 @@ class SaleOrder(models.Model):
     partner_job_site_id = fields.Many2one('res.partner', string='Job site Address')
     return_count = fields.Integer(string='Return Orders', compute='_compute_return_picking_ids')
 
+    # On Change methods
+    @api.onchange('partner_id')
+    def onchange_partner_id_change_rental(self):
+        if not self.partner_id:
+            return
+        else:
+            self.partner_job_site_id = self.partner_id.id
+
     # Compute methods
     @api.depends('picking_ids')
     def _compute_picking_ids(self):
@@ -46,6 +54,7 @@ class SaleOrder(models.Model):
     def _action_confirm(self):
         is_order_rental = True if self.is_rental_order else False
         if is_order_rental:
+
             for line in self.order_line:
                 procurements = []
                 qty = line._get_qty_procurement(False)
@@ -127,7 +136,43 @@ class SaleOrder(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-    # Inherited methods
+    qty_returned = fields.Float("Returned", store=True, compute='_compute_qty_returned')
+
+    @api.depends('move_ids.state', 'move_ids.scrapped', 'move_ids.product_uom_qty', 'move_ids.product_uom')
+    def _compute_qty_returned(self):
+        for line in self:
+            if line.is_rental:
+                return_pickings = line.order_id.mapped('picking_ids').filtered(
+                    lambda l: l.picking_type_id.code == 'incoming' and l.date_done)
+                return_stock_move_for_product = return_pickings.move_ids_without_package.filtered(
+                    lambda x: x.product_id.id == line.product_id.id)
+                return_total_qty = sum(move_line.quantity_done for move_line in return_stock_move_for_product)
+                if return_total_qty:
+                    line.write({'qty_returned': return_total_qty})
+
+    @api.depends('move_ids.state', 'move_ids.scrapped', 'move_ids.product_uom_qty', 'move_ids.product_uom')
+    def _compute_qty_delivered(self):
+        """
+            Inherited so that even the sale line with rental product can have delivery status.
+        """
+        for line in self:
+            if line.is_rental:
+                qty = 0.0
+                outgoing_moves, incoming_moves = line._get_outgoing_incoming_moves()
+                for move in outgoing_moves:
+                    if move.state != 'done':
+                        continue
+                    qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom,
+                                                              rounding_method='HALF-UP')
+                for move in incoming_moves:
+                    if move.state != 'done':
+                        continue
+                    qty -= move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom,
+                                                              rounding_method='HALF-UP')
+                line.qty_delivered = qty
+            else:
+                super(SaleOrderLine, self)._compute_qty_delivered()
+
     def _action_launch_stock_rule(self, previous_product_uom_qty=False):
         is_rental = True if self.order_id.is_rental_order else False
         if is_rental:
@@ -146,7 +191,6 @@ class SaleOrderLine(models.Model):
             total_price_charged = 0
             total_return_quantity_unit = 0
             total_return_price_charged = 0
-            product_per_day_price = self.product_id.rental_pricing_ids.filtered(lambda p: p.unit == 'day')
             invoicing_date = self.env.context.get('invoice_to')
             delivery_pickings = self.order_id.mapped('picking_ids').filtered(
                 lambda l: l.picking_type_id.code == 'outgoing' and l.date_done)
@@ -156,12 +200,30 @@ class SaleOrderLine(models.Model):
                 is_invoice_with_last_invoice_date = any(self.order_id.invoice_ids.mapped('last_invoiced_date'))
                 charge_from_date = max(self.order_id.invoice_ids.mapped(
                     'last_invoiced_date')) if is_invoice_with_last_invoice_date else delivery.date_done
-                duration = invoicing_date - charge_from_date
-                duration_in_days = duration.days
+                rental_pricing_id = self.product_id._get_best_pricing_rule(
+                    pickup_date=charge_from_date,
+                    return_date=invoicing_date,
+                    pricelist=self.order_id.pricelist_id,
+                    company=self.company_id)
+                duration_dict = self.env['rental.pricing']._compute_duration_vals(charge_from_date,
+                                                                                  invoicing_date)
+                if rental_pricing_id:
+                    values = {
+                        'duration_unit': rental_pricing_id.unit,
+                        'duration': duration_dict[rental_pricing_id.unit]
+                    }
+                else:
+                    values = {
+                        'duration_unit': 'day',
+                        'duration': duration_dict['day']
+                    }
+                unit_price = self.product_id.lst_price
+                if rental_pricing_id:
+                    unit_price = rental_pricing_id._compute_price(values.get('duration'), values.get('duration_unit'))
                 stock_move_for_product = delivery.move_ids_without_package.filtered(
                     lambda x: x.product_id.id == self.product_id.id)
                 total_qty = sum(move_line.quantity_done for move_line in stock_move_for_product)
-                quantity_charge = (total_qty * duration_in_days) * product_per_day_price.price
+                quantity_charge = total_qty * unit_price
                 total_price_charged += quantity_charge
                 total_delivered_quantity_unit += total_qty
             return_pickings = self.order_id.mapped('picking_ids').filtered(
@@ -171,12 +233,31 @@ class SaleOrderLine(models.Model):
                 return_charge_from_date = max(self.order_id.invoice_ids.mapped(
                     'last_invoiced_date')) if is_invoice_with_last_invoice_date and return_picking.date_done < max(
                     self.order_id.invoice_ids.mapped('last_invoiced_date')) else return_picking.date_done
-                return_duration = invoicing_date - return_charge_from_date
-                return_duration_in_days = return_duration.days
+                return_rental_pricing_id = self.product_id._get_best_pricing_rule(
+                    pickup_date=return_charge_from_date,
+                    return_date=invoicing_date,
+                    pricelist=self.order_id.pricelist_id,
+                    company=self.company_id)
+                return_duration_dict = self.env['rental.pricing']._compute_duration_vals(return_charge_from_date,
+                                                                                         invoicing_date)
+                if return_rental_pricing_id:
+                    return_values = {
+                        'duration_unit': return_rental_pricing_id.unit,
+                        'duration': return_duration_dict[return_rental_pricing_id.unit]
+                    }
+                else:
+                    return_values = {
+                        'duration_unit': 'day',
+                        'duration': return_duration_dict['day']
+                    }
+                return_unit_price = self.product_id.lst_price
+                if return_rental_pricing_id:
+                    return_unit_price = return_rental_pricing_id._compute_price(return_values.get('duration'),
+                                                                                return_values.get('duration_unit'))
                 return_stock_move_for_product = return_picking.move_ids_without_package.filtered(
                     lambda x: x.product_id.id == self.product_id.id)
                 return_total_qty = sum(move_line.quantity_done for move_line in return_stock_move_for_product)
-                return_quantity_charge = (return_total_qty * return_duration_in_days) * product_per_day_price.price
+                return_quantity_charge = return_total_qty * return_unit_price
                 total_return_price_charged += return_quantity_charge
                 total_return_quantity_unit += return_total_qty
             total_charge_for_rental = total_price_charged - total_return_price_charged
