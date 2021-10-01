@@ -7,16 +7,15 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-                    <field name="has_late_lines" invisible="1"/>
                     <field name="order_id" invisible="1"/>
                     <field name="return_rental_wizard_line_ids">
                         <tree create="false" editable="top">
                             <field name="product_id" readonly="1" force_save="1" options="{'no_open': True}"/>
                             <field name="order_line_id" invisible="1"/>
                             <field name="return_rental_order_wizard_id" invisible="1"/>
-                            <field name="qty_pickedup"/>
+                            <field name="qty_picked_up" readonly="1" force_save="1" options="{'no_open': True}"/>
+                            <field name="already_qty_returned" readonly="1" force_save="1" options="{'no_open': True}"/>
                             <field name="qty_returned"/>
-                            <field name="is_late" invisible="1"/>
                         </tree>
                     </field>
                     <footer>

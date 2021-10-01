@@ -1,4 +1,5 @@
 from odoo import fields, api, models, _
+from odoo.exceptions import UserError, Warning
 
 
 class StockMove(models.Model):
@@ -17,6 +18,9 @@ class StockMove(models.Model):
             rental_partner = self.sale_line_id.order_id.partner_job_site_id
             picking_type_id = self.env['stock.picking.type'].search(
                 [('is_rental_operation_type', '=', 'True'), ('code', '=', 'outgoing')])
+            is_picking_type_available = picking_type_id or picking_type_id.default_location_src_id
+            if not is_picking_type_available:
+                raise Warning(_("No operation type for rental found !"))
             res.update({
                 'partner_id': rental_partner.id,
                 'picking_type_id': picking_type_id.id,
