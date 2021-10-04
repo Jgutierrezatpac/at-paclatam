@@ -3,3 +3,4 @@
 
 from . import return_rental_wizard
 from . import sale_make_invoice_advance
+from . import rental_wizard
