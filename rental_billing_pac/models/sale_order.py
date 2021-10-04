@@ -9,14 +9,6 @@ class SaleOrder(models.Model):
     partner_job_site_id = fields.Many2one('res.partner', string='Job site Address')
     return_count = fields.Integer(string='Return Orders', compute='_compute_return_picking_ids')
 
-    # On Change methods
-    @api.onchange('partner_id')
-    def onchange_partner_id_change_rental(self):
-        if not self.partner_id:
-            return
-        else:
-            self.partner_job_site_id = self.partner_id.id
-
     # Compute methods
     @api.depends('picking_ids')
     def _compute_picking_ids(self):
@@ -36,7 +28,8 @@ class SaleOrder(models.Model):
     @api.onchange('partner_id')
     def _onchange_vendors(self):
         filtered_child = self.partner_id.child_ids.filtered(lambda r: r.type == 'rental').ids
-        filtered_child.append(self.partner_id.id)
+        if self.partner_id.rental_location_id:
+            filtered_child.append(self.partner_id.id)
         return {
             'domain': {
                 'partner_job_site_id': [
