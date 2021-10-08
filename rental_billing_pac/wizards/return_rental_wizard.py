@@ -33,8 +33,10 @@ class ReturnRentalProcessing(models.TransientModel):
         """
         if not self.return_rental_wizard_line_ids:
             raise UserError(_("There is nothing to return at the moment"))
+        company_user = self.env.company
         custom_picking_type_id = self.env['stock.picking.type'].search(
-            [('is_rental_operation_type', '=', 'True'), ('code', '=', 'incoming')])
+            [('is_rental_operation_type', '=', 'True'), ('code', '=', 'incoming'),
+             ('company_id', '=', company_user.id)])
         if not custom_picking_type_id:
             raise Warning(_("No operation type for rental return found !"))
         return_move_lines = []

@@ -10,8 +10,10 @@ class StockMove(models.Model):
         of moves in self.
         """
         res = super(StockMove, self)._get_new_picking_values()
+        company_user = self.env.company
         picking_type_id = self.env['stock.picking.type'].search(
-            [('is_rental_operation_type', '=', 'True'), ('code', '=', 'outgoing')])
+            [('is_rental_operation_type', '=', 'True'), ('code', '=', 'outgoing'),
+             ('company_id', '=', company_user.id)])
         if picking_type_id:
             is_rental = False
             if self.sale_line_id:
@@ -29,8 +31,10 @@ class StockMove(models.Model):
 
     def _search_picking_for_assignation(self):
         self.ensure_one()
+        company_user = self.env.company
         picking_type_id = self.env['stock.picking.type'].search(
-            [('is_rental_operation_type', '=', 'True'), ('code', '=', 'outgoing')])
+            [('is_rental_operation_type', '=', 'True'), ('code', '=', 'outgoing'), ('company_id', '=',
+                                                                                    company_user.id)])
         if picking_type_id:
             is_rental = False
             if self.sale_line_id:

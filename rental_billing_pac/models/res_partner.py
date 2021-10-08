@@ -12,12 +12,13 @@ class ResPartner(models.Model):
     @api.model
     def create(self, values):
         res = super(ResPartner, self).create(values)
-        rental_location = self.env.ref('rental_billing_pac.stock_location_rental',
+        rental_location = self.env.ref('rental_billing_pac.stock_location_partner_rental',
                                        raise_if_not_found=True)
         if not values.get('parent_id'):
             new_location = self.env['stock.location'].create({
                 'name': values.get('name'),
                 'usage': 'customer',
+                'company_id': False,
                 'location_id': rental_location.id,
             })
             res.update({'rental_location_id': new_location.id})
@@ -30,6 +31,7 @@ class ResPartner(models.Model):
                     rental_location = self.env['stock.location'].create({
                         'name': values.get('name'),
                         'usage': 'customer',
+                        'company_id': False,
                         'location_id': data[0].get('rental_location_id')[0]
                     })
                     res.update({'rental_location_id': rental_location.id})
@@ -37,12 +39,14 @@ class ResPartner(models.Model):
                     parent_new_location = self.env['stock.location'].create({
                         'name': res.parent_id.name,
                         'usage': 'customer',
+                        'company_id': False,
                         'location_id': rental_location.id,
                     })
                     res.parent_id.update({'rental_location_id': parent_new_location.id})
                     child_rental_location = self.env['stock.location'].create({
                         'name': values.get('name'),
                         'usage': 'customer',
+                        'company_id': False,
                         'location_id': parent_new_location.id,
                     })
                     res.update({'rental_location_id': child_rental_location.id})
