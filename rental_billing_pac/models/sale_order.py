@@ -47,7 +47,6 @@ class SaleOrder(models.Model):
     def _action_confirm(self):
         is_order_rental = True if self.is_rental_order else False
         if is_order_rental:
-
             for line in self.order_line:
                 procurements = []
                 qty = line._get_qty_procurement(False)
@@ -129,10 +128,15 @@ class SaleOrder(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
+    # Field declarations
     qty_returned = fields.Float("Returned", store=True, compute='_compute_qty_returned')
 
+    # Inherited Methods
     @api.depends('move_ids.state', 'move_ids.scrapped', 'move_ids.product_uom_qty', 'move_ids.product_uom')
     def _compute_qty_returned(self):
+        """
+            Compute inherited so that we can add the value from new picking created.
+        """
         for line in self:
             if line.is_rental:
                 return_pickings = line.order_id.mapped('picking_ids').filtered(
@@ -167,6 +171,9 @@ class SaleOrderLine(models.Model):
                 super(SaleOrderLine, self)._compute_qty_delivered()
 
     def _action_launch_stock_rule(self, previous_product_uom_qty=False):
+        """
+            Inherited so that the base code does not disable stock moves for rental order lines.
+        """
         is_rental = True if self.order_id.is_rental_order else False
         if is_rental:
             return True

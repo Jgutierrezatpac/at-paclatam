@@ -12,6 +12,7 @@
         </field>
     </record>
 
+    <!--Picking form-->
     <record id="view_picking_form_inherit_rental_billing_pac" model="ir.ui.view">
         <field name="name">view.picking.form.inherit.rental.billing.pac</field>
         <field name="model">stock.picking</field>

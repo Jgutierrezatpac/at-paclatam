@@ -8,6 +8,7 @@
     """,
 
     'description': """
+        Task id:  2481715
         This is module for joining Rental app with stock and invoice.
     """,
     'author': 'Odoo Ps',
