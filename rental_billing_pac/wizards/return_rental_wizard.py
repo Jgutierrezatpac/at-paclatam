@@ -9,9 +9,11 @@ class ReturnRentalProcessing(models.TransientModel):
     _name = 'return.rental.order.wizard'
     _description = 'Return Rental products'
 
+    # Fields Declarations
     order_id = fields.Many2one('sale.order', required=True, ondelete='cascade')
     return_rental_wizard_line_ids = fields.One2many('return.rental.order.wizard.line', 'return_rental_order_wizard_id')
 
+    # Onchange methods
     @api.onchange('order_id')
     def _get_wizard_lines(self):
         """Use Wizard lines to set by default the pickup/return value
@@ -27,6 +29,7 @@ class ReturnRentalProcessing(models.TransientModel):
                     self.env['return.rental.order.wizard.line']._default_wizard_line_vals(line))
             self.return_rental_wizard_line_ids = [(6, 0, [])] + [(0, 0, vals) for vals in lines_values if bool(vals)]
 
+    # Business methods
     def return_rental_products(self):
         """
             Create the rental returns for the rental order.
@@ -36,7 +39,7 @@ class ReturnRentalProcessing(models.TransientModel):
         company_user = self.env.company
         custom_picking_type_id = self.env['stock.picking.type'].search(
             [('is_rental_operation_type', '=', 'True'), ('code', '=', 'incoming'),
-             ('company_id', '=', company_user.id)])
+             ('company_id', '=', company_user.id)], limit=1)
         if not custom_picking_type_id:
             raise Warning(_("No operation type for rental return found !"))
         return_move_lines = []
@@ -81,9 +84,12 @@ class ReturnRentalProcessingLine(models.TransientModel):
     _name = 'return.rental.order.wizard.line'
     _description = 'Return RentalOrderLine transient representation'
 
+    # Business methods
     @api.model
     def _default_wizard_line_vals(self, line):
-        # TODO : ADD our values
+        """
+            Creates the lines to be added when we open the rental return wizard.
+        """
         total_product_quantity_delivered = 0
         total_product_quantity_returned = 0
         delivery_pickings = line.order_id.mapped('picking_ids').filtered(lambda l: l.picking_type_id.code == 'outgoing')
