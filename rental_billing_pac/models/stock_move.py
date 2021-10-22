@@ -37,7 +37,9 @@ class StockMove(models.Model):
         company_user = self.env.company
         picking_type_id = self.env['stock.picking.type'].search(
             [('is_rental_operation_type', '=', 'True'), ('code', '=', 'outgoing'), ('company_id', '=',
-                                                                                    company_user.id)])
+                                                                                    company_user.id)], limit=1)
+        if not picking_type_id:
+            raise UserError(_("No proper operation type for Rental Delivery configured."))
         if picking_type_id:
             is_rental = False
             if self.sale_line_id:
