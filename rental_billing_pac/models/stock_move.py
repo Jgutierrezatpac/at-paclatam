@@ -33,6 +33,10 @@ class StockMove(models.Model):
         return res
 
     def _search_picking_for_assignation(self):
+        """
+            Inherited as we need to search a picking made from the custom operation type for the rental,
+            else it will call base.
+        """
         self.ensure_one()
         company_user = self.env.company
         picking_type_id = self.env['stock.picking.type'].search(
@@ -60,3 +64,26 @@ class StockMove(models.Model):
                 return super(StockMove, self)._search_picking_for_assignation()
         else:
             return super(StockMove, self)._search_picking_for_assignation()
+
+    @api.constrains('company_id')
+    def _check_company(self):
+        """
+            Inherited to solve the issue of the multi company while validating the move !
+        """
+        is_rental_order = True if self.sale_line_id.order_id.is_rental_order else False
+        if not is_rental_order:
+            super(StockMove, self)._check_company()
+
+
+class StockMoveLine(models.Model):
+    _inherit = "stock.move.line"
+
+    # Inherited methods
+    @api.constrains('company_id')
+    def _check_company(self):
+        """
+            Inherited to solve the issue of the multi company while validating the stock move line !
+        """
+        is_rental_order = True if self.move_id.sale_line_id.order_id.is_rental_order else False
+        if not is_rental_order:
+            super(StockMoveLine, self)._check_company()
