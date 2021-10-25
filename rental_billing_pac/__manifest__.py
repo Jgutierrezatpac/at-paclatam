@@ -14,7 +14,7 @@
     'author': 'Odoo Ps',
     'version': '1.0.0',
 
-    'depends': ['sale_management', 'stock', 'contacts', 'sale_renting'],
+    'depends': ['sale_management', 'stock', 'contacts', 'sale_renting', 'sale_stock_renting'],
 
     'data': [
         'security/ir.model.access.csv',
