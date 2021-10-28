@@ -47,13 +47,14 @@ class SaleOrder(models.Model):
     def _action_confirm(self):
         is_order_rental = True if self.is_rental_order else False
         if is_order_rental:
+            procurements = []
             for line in self.order_line:
-                procurements = []
-                qty = line._get_qty_procurement(False)
-                group_id = self.env['procurement.group'].create(line._prepare_procurement_group_vals())
-                line.order_id.procurement_group_id = group_id
+                group_id = line._get_procurement_group()
+                if not group_id:
+                    group_id = self.env['procurement.group'].create(line._prepare_procurement_group_vals())
+                    line.order_id.procurement_group_id = group_id
                 values = line._prepare_procurement_values(group_id=group_id)
-                product_qty = line.product_uom_qty - qty
+                product_qty = line.product_uom_qty
                 line_uom = line.product_uom
                 quant_uom = line.product_id.uom_id
                 product_qty, procurement_uom = line_uom._adjust_uom_quantities(product_qty, quant_uom)
@@ -61,8 +62,8 @@ class SaleOrder(models.Model):
                     line.product_id, product_qty, procurement_uom,
                     line.order_id.partner_shipping_id.property_stock_customer,
                     line.name, line.order_id.name, line.order_id.company_id, values))
-                if procurements:
-                    self.env['procurement.group'].run(procurements)
+            if procurements:
+                self.env['procurement.group'].run(procurements)
             return super(SaleOrder, self)._action_confirm()
         else:
             return super(SaleOrder, self)._action_confirm()
