@@ -195,76 +195,77 @@ class SaleOrderLine(models.Model):
             invoicing_date = self.env.context.get('invoice_to')
             delivery_pickings = self.order_id.mapped('picking_ids').filtered(
                 lambda l: l.picking_type_id.code == 'outgoing' and l.date_done)
-            if not delivery_pickings:
-                raise Warning(_("No done Delivery found !"))
-            for delivery in delivery_pickings:
-                is_invoice_with_last_invoice_date = any(self.order_id.invoice_ids.mapped('last_invoiced_date'))
-                charge_from_date = max(self.order_id.invoice_ids.mapped(
-                    'last_invoiced_date')) if is_invoice_with_last_invoice_date else delivery.date_done
-                rental_pricing_id = self.product_id._get_best_pricing_rule(
-                    pickup_date=charge_from_date,
-                    return_date=invoicing_date,
-                    pricelist=self.order_id.pricelist_id,
-                    company=self.company_id)
-                duration_dict = self.env['rental.pricing']._compute_duration_vals(charge_from_date,
-                                                                                  invoicing_date)
-                if rental_pricing_id:
-                    values = {
-                        'duration_unit': rental_pricing_id.unit,
-                        'duration': duration_dict[rental_pricing_id.unit]
-                    }
-                else:
-                    values = {
-                        'duration_unit': 'day',
-                        'duration': duration_dict['day']
-                    }
-                unit_price = self.product_id.lst_price
-                if rental_pricing_id:
-                    unit_price = rental_pricing_id._compute_price(values.get('duration'), values.get('duration_unit'))
-                stock_move_for_product = delivery.move_ids_without_package.filtered(
-                    lambda x: x.product_id.id == self.product_id.id)
-                total_qty = sum(move_line.quantity_done for move_line in stock_move_for_product)
-                quantity_charge = total_qty * unit_price
-                total_price_charged += quantity_charge
-                total_delivered_quantity_unit += total_qty
-            return_pickings = self.order_id.mapped('picking_ids').filtered(
-                lambda l: l.picking_type_id.code == 'incoming' and l.date_done)
-            for return_picking in return_pickings:
-                is_invoice_with_last_invoice_date = any(self.order_id.invoice_ids.mapped('last_invoiced_date'))
-                return_charge_from_date = max(self.order_id.invoice_ids.mapped(
-                    'last_invoiced_date')) if is_invoice_with_last_invoice_date and return_picking.date_done < max(
-                    self.order_id.invoice_ids.mapped('last_invoiced_date')) else return_picking.date_done
-                return_rental_pricing_id = self.product_id._get_best_pricing_rule(
-                    pickup_date=return_charge_from_date,
-                    return_date=invoicing_date,
-                    pricelist=self.order_id.pricelist_id,
-                    company=self.company_id)
-                return_duration_dict = self.env['rental.pricing']._compute_duration_vals(return_charge_from_date,
-                                                                                         invoicing_date)
-                if return_rental_pricing_id:
-                    return_values = {
-                        'duration_unit': return_rental_pricing_id.unit,
-                        'duration': return_duration_dict[return_rental_pricing_id.unit]
-                    }
-                else:
-                    return_values = {
-                        'duration_unit': 'day',
-                        'duration': return_duration_dict['day']
-                    }
-                return_unit_price = self.product_id.lst_price
-                if return_rental_pricing_id:
-                    return_unit_price = return_rental_pricing_id._compute_price(return_values.get('duration'),
-                                                                                return_values.get('duration_unit'))
-                return_stock_move_for_product = return_picking.move_ids_without_package.filtered(
-                    lambda x: x.product_id.id == self.product_id.id)
-                return_total_qty = sum(move_line.quantity_done for move_line in return_stock_move_for_product)
-                return_quantity_charge = return_total_qty * return_unit_price
-                total_return_price_charged += return_quantity_charge
-                total_return_quantity_unit += return_total_qty
-            total_charge_for_rental = total_price_charged - total_return_price_charged
-            total_quantity_for_rental = total_delivered_quantity_unit - total_return_quantity_unit
-            new_quantity = total_quantity_for_rental if total_quantity_for_rental else total_delivered_quantity_unit
-            price_per_rental_quantity = total_charge_for_rental / new_quantity
-            res['quantity'] = new_quantity
-            res['price_unit'] = price_per_rental_quantity
+            if delivery_pickings:
+                for delivery in delivery_pickings:
+                    is_invoice_with_last_invoice_date = any(self.order_id.invoice_ids.mapped('last_invoiced_date'))
+                    charge_from_date = max(self.order_id.invoice_ids.mapped(
+                        'last_invoiced_date')) if is_invoice_with_last_invoice_date else delivery.date_done
+                    rental_pricing_id = self.product_id._get_best_pricing_rule(
+                        pickup_date=charge_from_date,
+                        return_date=invoicing_date,
+                        pricelist=self.order_id.pricelist_id,
+                        company=self.company_id)
+                    duration_dict = self.env['rental.pricing']._compute_duration_vals(charge_from_date,
+                                                                                      invoicing_date)
+                    if rental_pricing_id:
+                        values = {
+                            'duration_unit': rental_pricing_id.unit,
+                            'duration': duration_dict[rental_pricing_id.unit]
+                        }
+                    else:
+                        values = {
+                            'duration_unit': 'day',
+                            'duration': duration_dict['day']
+                        }
+                    unit_price = self.product_id.lst_price
+                    if rental_pricing_id:
+                        unit_price = rental_pricing_id._compute_price(values.get('duration'),
+                                                                      values.get('duration_unit'))
+                    stock_move_for_product = delivery.move_ids_without_package.filtered(
+                        lambda x: x.product_id.id == self.product_id.id)
+                    total_qty = sum(move_line.quantity_done for move_line in stock_move_for_product)
+                    quantity_charge = total_qty * unit_price
+                    total_price_charged += quantity_charge
+                    total_delivered_quantity_unit += total_qty
+                return_pickings = self.order_id.mapped('picking_ids').filtered(
+                    lambda l: l.picking_type_id.code == 'incoming' and l.date_done)
+                for return_picking in return_pickings:
+                    is_invoice_with_last_invoice_date = any(self.order_id.invoice_ids.mapped('last_invoiced_date'))
+                    return_charge_from_date = max(self.order_id.invoice_ids.mapped(
+                        'last_invoiced_date')) if is_invoice_with_last_invoice_date and return_picking.date_done < max(
+                        self.order_id.invoice_ids.mapped('last_invoiced_date')) else return_picking.date_done
+                    return_rental_pricing_id = self.product_id._get_best_pricing_rule(
+                        pickup_date=return_charge_from_date,
+                        return_date=invoicing_date,
+                        pricelist=self.order_id.pricelist_id,
+                        company=self.company_id)
+                    return_duration_dict = self.env['rental.pricing']._compute_duration_vals(return_charge_from_date,
+                                                                                             invoicing_date)
+                    if return_rental_pricing_id:
+                        return_values = {
+                            'duration_unit': return_rental_pricing_id.unit,
+                            'duration': return_duration_dict[return_rental_pricing_id.unit]
+                        }
+                    else:
+                        return_values = {
+                            'duration_unit': 'day',
+                            'duration': return_duration_dict['day']
+                        }
+                    return_unit_price = self.product_id.lst_price
+                    if return_rental_pricing_id:
+                        return_unit_price = return_rental_pricing_id._compute_price(return_values.get('duration'),
+                                                                                    return_values.get('duration_unit'))
+                    return_stock_move_for_product = return_picking.move_ids_without_package.filtered(
+                        lambda x: x.product_id.id == self.product_id.id)
+                    return_total_qty = sum(move_line.quantity_done for move_line in return_stock_move_for_product)
+                    return_quantity_charge = return_total_qty * return_unit_price
+                    total_return_price_charged += return_quantity_charge
+                    total_return_quantity_unit += return_total_qty
+                total_charge_for_rental = total_price_charged - total_return_price_charged
+                total_quantity_for_rental = total_delivered_quantity_unit - total_return_quantity_unit
+                new_quantity = total_quantity_for_rental if total_quantity_for_rental else total_delivered_quantity_unit
+                price_per_rental_quantity = total_charge_for_rental / new_quantity
+                res['quantity'] = new_quantity
+                res['quantity'] = new_quantity
+                res['price_unit'] = price_per_rental_quantity
         return res

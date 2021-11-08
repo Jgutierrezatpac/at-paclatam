@@ -11,6 +11,11 @@
                 <field name="invoice_to" class="oe_inline"
                        attrs="{'invisible': [('advance_payment_method', '!=', 'rental_invoice')], 'required': [('advance_payment_method', '=', 'rental_invoice')]}"/>
             </field>
+            <xpath expr="//field[@name='advance_payment_method']" position="attributes">
+                <attribute name="attrs">
+                    {'invisible': False}
+                </attribute>
+            </xpath>
         </field>
     </record>
 
