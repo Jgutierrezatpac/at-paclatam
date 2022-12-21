@@ -258,7 +258,7 @@ class SaleOrder(models.Model):
 
     def action_approve(self):
         super().action_confirm()
-        is_authorize = True
+        self.is_authorize = True
         return True
 
     def _compute_has_late_lines(self):
