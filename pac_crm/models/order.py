@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
-from odoo import api, fields, models, _, SUPERUSER_ID
+from odoo import api, fields, models, _
 import base64
 import xlrd
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools import float_round
 import math
 
 class SaleOrder(models.Model):
@@ -24,10 +23,10 @@ class SaleOrder(models.Model):
     file_name = fields.Char(string='File Name')
     file_data = fields.Binary('import file', )
 
-    total_weight = fields.Float(string="Total Weight", compute="_compute_total_weight_parts")
-    total_part = fields.Integer(string="Total Parts", compute="_compute_total_weight_parts")
+    total_weight = fields.Float(string="Total Weight", compute="_compute_total_weight_parts", compute_sudo=True)
+    total_part = fields.Integer(string="Total Parts", compute="_compute_total_weight_parts", compute_sudo=True)
 
-    replacement_price = fields.Monetary(string='Replacement', store=True, compute='_compute_total_weight_parts') 
+    replacement_price = fields.Monetary(string='Replacement', store=True, compute='_compute_total_weight_parts', compute_sudo=True)
 
     @api.onchange('order_line')
     def _onchange_avoid_sol_dup(self):
@@ -36,17 +35,16 @@ class SaleOrder(models.Model):
                 if len(order.order_line.filtered(lambda sol: sol.product_id == line.product_id)) > 1:
                     raise ValidationError(_(
                         '{} already exists in this order'.format(line.product_id.name)))
-                else: continue
 
     @api.depends('order_line')
     def _compute_total_weight_parts(self):
         for order in self:
             weight = parts = replacement = 0
             for line in order.order_line:
-                weight += line.total_weight 
+                weight += line.total_weight
                 parts += line.product_uom_qty
                 replacement += line.replacement_total
-            order.total_weight = weight 
+            order.total_weight = weight
             order.total_part = parts
             order.replacement_price = replacement
 
@@ -54,9 +52,7 @@ class SaleOrder(models.Model):
     def _compute_authorization(self):
         sales_manager = self.env.ref('sales_team.group_sale_manager').users
         
-        # user_id = self.env.user
         for order in self:
-            
             for discount in order.discount_ids:
                 if order.user_id not in sales_manager and discount._origin not in order.user_id.discounts:
                     order.need_authorize = True
@@ -83,8 +79,6 @@ class SaleOrder(models.Model):
         # create the method
         self.valid_product_code(archive_lines)
 
-        # racks = {}
-
         for line in archive_lines:
             code = str(line.get('codigo_producto',"")).strip()
             product_id = self.env['product.product'].search([('default_code','=',code)])
@@ -93,10 +87,6 @@ class SaleOrder(models.Model):
             racks_qty = 1
             if product_id.rack_qty > 0:
                 racks_qty = quantity / product_id.rack_qty
-            # if product_id.rack_name and racks.get(product_id.rack_name):
-            #     racks[product_id.rack_name] += racks_qty 
-            # elif product_id.rack_name:
-            #     racks[product_id.rack_name] = racks_qty
 
             if not self.is_rental_order:
                 if self and product_id:
@@ -111,7 +101,7 @@ class SaleOrder(models.Model):
                         'total_weight': product_id.weight * float(quantity)
                     }
 
-            else:  
+            else: 
                 if self and product_id:
                     price = 0
                     rent = False
@@ -230,9 +220,7 @@ class SaleOrder(models.Model):
                     code = self.env.ref('pac_crm.rental_order_sequence').code
                     name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
                 vals['name'] = name
-        return super(SaleOrder, self).create(vals)
-
-   
+        return super().create(vals)
 
     @api.depends('order_line.price_total', 'discount_ids')
     def _amount_all(self):
@@ -257,19 +245,19 @@ class SaleOrder(models.Model):
             })
 
     def _prepare_invoice(self,):
-        invoice_vals = super(SaleOrder, self)._prepare_invoice()
+        invoice_vals = super()._prepare_invoice()
         invoice_vals.update({
             'discount_ids': self.discount_ids,
         })
         return invoice_vals
 
     def action_confirm(self):
-        if self.need_authorize and self.is_authorize == False:
+        if self.need_authorize and not self.is_authorize:
             return
-        super(SaleOrder, self).action_confirm()
+        super().action_confirm()
 
     def action_approve(self):
-        super(SaleOrder, self).action_confirm()
+        super().action_confirm()
         is_authorize = True
         return True
 
@@ -304,7 +292,6 @@ class SaleOrderLine(models.Model):
             if line.product_id and line.order_id.is_rental_order:
                 line.is_rental = True
                 price = 0
-                # pricing_list = line.product_id.rental_pricing_ids.filtered(lambda pricing: pricing.unit == 'month' and (pricing.company_id == self.env.company or not pricing.company_id))
                 for pricing in line.product_id.rental_pricing_ids:
                     if line.product_id.id in pricing.product_variant_ids.ids and pricing.unit == 'month' and pricing.company_id == self.env.company:
                         price = pricing.price
@@ -369,5 +356,3 @@ class SaleOrderLine(models.Model):
     
     def _compute_reservation_begin(self):
         return
-
-    
