@@ -9,7 +9,6 @@
         <field name="view_id" ref="sales_team.crm_team_view_search"/>
     </record>
 
-
     <menuitem id="second_team_config"
             name="Second Sales Teams"
             parent="crm.crm_menu_config"
