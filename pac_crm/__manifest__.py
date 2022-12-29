@@ -12,7 +12,7 @@
     'website': 'https://www.odoo.com/',
 
     'category': 'Custom Development',
-    'version': '1.1',
+    'version': '1.2',
     'license': 'OPL-1',
 
     # any module necessary for this one to work correctly
