@@ -8,15 +8,15 @@
     task id: 2314441
     At-Pac Bolivia : CRM customizations
     """,
-    'author': 'Odoo',
+    'author': 'Odoo Inc',
     'website': 'https://www.odoo.com/',
 
     'category': 'Custom Development',
-    'version': '1.0',
-    'license': 'OEEL-1',
+    'version': '1.1',
+    'license': 'OPL-1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'sales_team','crm','sale','sale_crm', 'sale_renting'],
+    'depends': ['sales_team', 'sale_crm', 'sale_renting_crm'],
 
     # always loaded
     'data': [
@@ -32,7 +32,10 @@
         'views/partner_inherit_form.xml',
         'wizard/success_message.xml'
     ],
-    # only loaded in demonstration mode
-    'demo': [],
+    'assets': {
+        'web.assets_backend': [
+            'static/src/js/rental_config.js',
+        ],
+    },
     'application': False,
 }

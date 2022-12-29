@@ -8,8 +8,7 @@
             <field name="partner_id" position="after">
                 <field name="discount_ids" widget="many2many_tags"/>
             </field>
-
-            <field name="amount_untaxed" position="after">
+            <field name="tax_totals_json" position="before">
                 <field name="amount_discount"/>
             </field> 
         </field>
