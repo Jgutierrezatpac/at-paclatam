@@ -208,17 +208,17 @@ class SaleOrder(models.Model):
                 seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(vals['date_order']))
             if vals['is_rental_order']:
                 code = self.env.ref('pac_crm.rental_order_sequence').code
-                name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
+                name = self.env['ir.sequence'].with_company(vals.get('company_id')).next_by_code(code, sequence_date=seq_date) or _('New')
                 while self.env['sale.order'].search_count([('name', '=', name)]) >= 1:
                     code = self.env.ref('pac_crm.rental_order_sequence').code
-                    name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
+                    name = self.env['ir.sequence'].with_company(vals.get('company_id')).next_by_code(code, sequence_date=seq_date) or _('New')
                 vals['name'] = name
             elif vals['is_used']:
                 code = self.env.ref('pac_crm.used_sale_order_sequence').code
-                name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
+                name = self.env['ir.sequence'].with_company(vals.get('company_id')).next_by_code(code, sequence_date=seq_date) or _('New')
                 while self.env['sale.order'].search_count([('name', '=', name)]) >= 1:
                     code = self.env.ref('pac_crm.rental_order_sequence').code
-                    name = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(code, sequence_date=seq_date) or _('New')
+                    name = self.env['ir.sequence'].with_company(vals.get('company_id')).next_by_code(code, sequence_date=seq_date) or _('New')
                 vals['name'] = name
         return super().create(vals)
 
