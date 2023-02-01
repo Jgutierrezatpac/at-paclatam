@@ -2,7 +2,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
 
 class RentalProcessing(models.TransientModel):
     _inherit = 'rental.order.wizard'
@@ -16,7 +15,6 @@ class RentalProcessingLine(models.TransientModel):
 
     @api.model
     def _default_wizard_line_vals(self, line, status):
-        # delay_price = line.product_id._compute_delay_price(fields.Datetime.now() - line.return_date)
         return {
             'order_line_id': line.id,
             'product_id': line.product_id.id,
@@ -24,8 +22,6 @@ class RentalProcessingLine(models.TransientModel):
             'qty_delivered': line.qty_delivered if status == 'return' else line.product_uom_qty - line.qty_delivered,
             'qty_returned': line.qty_returned if status == 'pickup' else line.qty_delivered - line.qty_returned,
         }
-
-    
 
     def _apply(self):
         """Apply the wizard modifications to the SaleOrderLine.
@@ -41,7 +37,6 @@ class RentalProcessingLine(models.TransientModel):
                     'product_uom_qty': max(order_line.product_uom_qty, order_line.qty_delivered + wizard_line.qty_delivered),
                     'qty_delivered': order_line.qty_delivered + wizard_line.qty_delivered
                 })
-
                 ######remove if statement
                 order_line.pickup_date = fields.Datetime.now()
                 ###### end
@@ -49,7 +44,6 @@ class RentalProcessingLine(models.TransientModel):
                 if wizard_line.is_late:
                     # Delays facturation
                     order_line._generate_delay_line(wizard_line.qty_returned)
-
                 order_line.update({
                     'qty_returned': order_line.qty_returned + wizard_line.qty_returned
                 })

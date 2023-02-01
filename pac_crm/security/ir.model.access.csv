@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 pac_sale_discount_user,pac_crm discountsale user,model_discount_sale,base.group_user,1,1,1,1
 pac_second_team_user,pac_crm secondteam user,model_second_sales_team,base.group_user,1,1,1,1
+pac_crm.access_message_wizard,access_message_wizard,pac_crm.model_message_wizard,base.group_user,1,1,1,1

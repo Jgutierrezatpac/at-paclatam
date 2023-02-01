@@ -31,11 +31,11 @@
                 <field name="need_authorize"/>
             </field>
 
-            <field name="amount_untaxed" position="after">
+            <field name="tax_totals_json" position="before">
                 <field name="amount_discount"/>
             </field>
 
-            <field name="amount_total" position="after">
+            <field name="tax_totals_json" position="after">
                 <field name="replacement_price" attrs="{'invisible': [('is_rental_order','=',False)]}"/>
             </field>
 

@@ -10,7 +10,7 @@ class AccountMove(models.Model):
 
     @api.depends('discount_ids')
     def _compute_amount(self):
-        super(AccountMove,self)._compute_amount()
+        super()._compute_amount()
         for move in self:
             sum_discounts = sum(dc.discount for dc in move.discount_ids) or 0.0
 
