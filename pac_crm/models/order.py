@@ -125,7 +125,7 @@ class SaleOrder(models.Model):
                         'rack_qty': racks_qty,
                         'total_weight': product_id.weight * float(quantity),
                         'is_product_rentable':rent,
-                        'is_rental': rent
+                        # 'is_rental': rent
                     }
             self.env['sale.order.line'].create(vals)
         
