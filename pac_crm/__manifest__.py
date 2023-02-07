@@ -12,7 +12,7 @@
     'website': 'https://www.odoo.com/',
 
     'category': 'Custom Development',
-    'version': '1.1',
+    'version': '1.2',
     'license': 'OPL-1',
 
     # any module necessary for this one to work correctly
@@ -32,10 +32,5 @@
         'views/partner_inherit_form.xml',
         'wizard/success_message.xml'
     ],
-    'assets': {
-        'web.assets_backend': [
-            'static/src/js/rental_config.js',
-        ],
-    },
     'application': False,
 }
