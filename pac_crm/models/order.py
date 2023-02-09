@@ -288,7 +288,6 @@ class SaleOrderLine(models.Model):
     @api.onchange('product_id')
     def _onchange_price_rental(self):
         for line in self:
-            
             if line.product_id and line.order_id.is_rental_order:
                 line.is_rental = True
                 price = 0

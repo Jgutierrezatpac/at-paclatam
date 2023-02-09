@@ -12,11 +12,11 @@
     'website': 'https://www.odoo.com/',
 
     'category': 'Custom Development',
-    'version': '1.1',
+    'version': '1.2',
     'license': 'OPL-1',
 
     # any module necessary for this one to work correctly
-    'depends': ['sales_team', 'sale_crm', 'sale_renting_crm'],
+    'depends': ['sales_team', 'sale_crm', 'sale_renting_crm', 'sale_stock_renting'],
 
     # always loaded
     'data': [
@@ -34,7 +34,7 @@
     ],
     'assets': {
         'web.assets_backend': [
-            'static/src/js/rental_config.js',
+            'pac_crm/static/src/js/**/*',
         ],
     },
     'application': False,
